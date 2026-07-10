@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Org {
+  id         String       @id @default(uuid())
+  name       String
+  created_at DateTime     @default(now())
+  users      User[]
+  settings   OrgSettings?
+  products   Product[]
+  audit_logs AuditLog[]
+}
+
+model OrgSettings {
+  id                   String        @id @default(uuid())
+  org_id               String        @unique
+  org                  Org           @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  confidence_threshold Float         @default(0.80)
+  created_at           DateTime      @default(now())
+  updated_at           DateTime      @updatedAt
+  margin_floors        MarginFloor[]
+}
+
+model MarginFloor {
+  id              String      @id @default(uuid())
+  org_settings_id String
+  org_settings    OrgSettings @relation(fields: [org_settings_id], references: [id], onDelete: Cascade)
+  category        String
+  min_margin      Float
+}
+
+model User {
+  id             String         @id @default(uuid())
+  org_id         String
+  org            Org            @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  email          String         @unique
+  password_hash  String
+  name           String
+  role           Role           @default(ANALYST)
+  created_at     DateTime       @default(now())
+  refresh_tokens RefreshToken[]
+  audit_logs     AuditLog[]
+  @@index([org_id])
+}
+
+enum Role {
+  ADMIN
+  ANALYST
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  token_hash String   @unique
+  expires_at DateTime
+  revoked    Boolean  @default(false)
+  created_at DateTime @default(now())
+}
+
+model Product {
+  id                  String              @id @default(uuid())
+  org_id              String
+  org                 Org                 @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  name                String
+  sku                 String
+  category            String
+  cost_of_goods       Float
+  current_price       Float
+  is_active           Boolean             @default(true)
+  created_at          DateTime            @default(now())
+  updated_at          DateTime            @updatedAt
+  competitor_prices   CompetitorPrice[]
+  demand_signals      DemandSignal[]
+  inventory_snapshots InventorySnapshot[]
+  price_history       PriceHistory[]
+  recommendations     Recommendation[]
+  @@unique([org_id, sku])
+  @@index([org_id])
+}
+
+model CompetitorPrice {
+  id          String               @id @default(uuid())
+  product_id  String
+  product     Product              @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  competitor  String
+  price       Float
+  event_type  CompetitorPriceEvent @default(NO_CHANGE)
+  recorded_at DateTime             @default(now())
+  @@index([product_id, recorded_at])
+}
+
+enum CompetitorPriceEvent {
+  NO_CHANGE
+  SMALL_FLUCTUATION
+  PRICE_DROP
+  PRICE_INCREASE
+  NEW_COMPETITOR
+}
+
+model DemandSignal {
+  id           String      @id @default(uuid())
+  product_id   String
+  product      Product     @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  demand_index Float
+  trend        DemandTrend
+  notes        String?
+  recorded_at  DateTime    @default(now())
+  @@index([product_id, recorded_at])
+}
+
+enum DemandTrend {
+  RISING
+  STABLE
+  FALLING
+  SEASONAL_PEAK
+  SEASONAL_DIP
+}
+
+model InventorySnapshot {
+  id            String   @id @default(uuid())
+  product_id    String
+  product       Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  stock_level   Int
+  restock_event Boolean  @default(false)
+  recorded_at   DateTime @default(now())
+  @@index([product_id, recorded_at])
+}
+
+model PriceHistory {
+  id                String            @id @default(uuid())
+  product_id        String
+  product           Product           @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  old_price         Float
+  new_price         Float
+  change_source     PriceChangeSource
+  recommendation_id String?
+  recommendation    Recommendation?   @relation(fields: [recommendation_id], references: [id])
+  changed_at        DateTime          @default(now())
+  @@index([product_id, changed_at])
+}
+
+enum PriceChangeSource {
+  AI_AUTO_EXECUTED
+  ANALYST_APPROVED
+  ANALYST_MODIFIED
+  ADMIN_MANUAL
+}
+
+model Recommendation {
+  id                String               @id @default(uuid())
+  product_id        String
+  product           Product              @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  current_price     Float
+  recommended_price Float
+  confidence_score  Float
+  status            RecommendationStatus @default(PENDING)
+  trigger           RecommendationTrigger
+  rationale         String
+  analyst_note      String?
+  final_price       Float?
+  reviewed_by       String?
+  reviewed_at       DateTime?
+  store_update_ok   Boolean?
+  created_at        DateTime             @default(now())
+  updated_at        DateTime             @updatedAt
+  agent_outputs     AgentOutput[]
+  price_history     PriceHistory[]
+  audit_logs        AuditLog[]
+  @@index([product_id, status])
+}
+
+enum RecommendationStatus {
+  PENDING
+  AUTO_EXECUTED
+  APPROVED
+  MODIFIED
+  REJECTED
+  FAILED
+}
+
+enum RecommendationTrigger {
+  MANUAL
+  MARKET_SIMULATION
+  SCHEDULED
+}
+
+model AgentOutput {
+  id                String         @id @default(uuid())
+  recommendation_id String
+  recommendation    Recommendation @relation(fields: [recommendation_id], references: [id], onDelete: Cascade)
+  agent_name        AgentName
+  summary           String
+  data_used         Json
+  output            Json
+  run_order         Int
+  created_at        DateTime       @default(now())
+}
+
+enum AgentName {
+  MARKET_INTELLIGENCE
+  DEMAND_FORECASTING
+  INVENTORY_COST
+  PRICING_STRATEGY
+  EXECUTION_COMPLIANCE
+}
+
+model AuditLog {
+  id                String          @id @default(uuid())
+  org_id            String
+  org               Org             @relation(fields: [org_id], references: [id], onDelete: Cascade)
+  user_id           String?
+  user              User?           @relation(fields: [user_id], references: [id])
+  recommendation_id String?
+  recommendation    Recommendation? @relation(fields: [recommendation_id], references: [id])
+  action            AuditAction
+  old_price         Float?
+  new_price         Float?
+  product_id        String?
+  product_name      String?
+  notes             String?
+  created_at        DateTime        @default(now())
+  @@index([org_id, created_at])
+  @@index([product_id])
+}
+
+enum AuditAction {
+  PRICE_AUTO_EXECUTED
+  PRICE_APPROVED
+  PRICE_MODIFIED
+  PRICE_REJECTED
+  PRICE_ADMIN_MANUAL
+  ANALYSIS_TRIGGERED
+  ANALYSIS_FAILED
+  SIMULATION_RUN
+  STORE_UPDATE_FAILED
+  USER_INVITED
+  USER_ROLE_CHANGED
+  SETTINGS_UPDATED
+}
