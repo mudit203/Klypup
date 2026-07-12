@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes';
+import productRoutes from './routes/product.routes';
 import { SignupSchema } from '@klypup/shared';
 
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(morgan('dev'));
 
 // Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/products', productRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
