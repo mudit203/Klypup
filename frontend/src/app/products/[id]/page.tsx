@@ -51,59 +51,115 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // AI Orchestrator States
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [progressLogs, setProgressLogs] = useState<any[]>([]);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<any | null>(null);
+
+  // Main data load function
+  const fetchProductData = async () => {
+    if (!user || !productId) return;
+    try {
+      const [prodRes, historyRes, competitorRes, demandRes] = await Promise.all([
+        api.get(`/products/${productId}`),
+        api.get(`/products/${productId}/price-history`),
+        api.get(`/products/${productId}/competitor-prices`),
+        api.get(`/products/${productId}/demand-signals`),
+      ]);
+
+      setProduct(prodRes.data.product);
+
+      // Merge Pricing Timeline (Our Price history + Competitor prices history) by date
+      const dataByDate: { [key: string]: any } = {};
+
+      // 1. Load our price timeline
+      historyRes.data.history.forEach((h: any) => {
+        const dateStr = new Date(h.changed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        if (!dataByDate[dateStr]) dataByDate[dateStr] = { date: dateStr };
+        dataByDate[dateStr]['Our Price'] = h.price;
+      });
+
+      // 2. Load competitor price timeline
+      competitorRes.data.competitorHistory.forEach((c: any) => {
+        const dateStr = new Date(c.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        if (!dataByDate[dateStr]) dataByDate[dateStr] = { date: dateStr };
+        dataByDate[dateStr][c.competitor] = c.price;
+      });
+
+      // Convert the object to an array and sort it chronologically
+      const pricingArray = Object.values(dataByDate);
+      setPricingChartData(pricingArray);
+
+      // Load Demand Timeline
+      const demandArray = demandRes.data.demandHistory.map((d: any) => ({
+        date: new Date(d.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        'Demand Index': d.demand_index,
+      }));
+      setDemandChartData(demandArray);
+
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to load product details');
+    }
+  };
+
   useEffect(() => {
     if (!user || !productId) return;
-
-    const fetchProductData = async () => {
+    
+    const initialLoad = async () => {
       setIsLoading(true);
       setError(null);
-      try {
-        const [prodRes, historyRes, competitorRes, demandRes] = await Promise.all([
-          api.get(`/products/${productId}`),
-          api.get(`/products/${productId}/price-history`),
-          api.get(`/products/${productId}/competitor-prices`),
-          api.get(`/products/${productId}/demand-signals`),
-        ]);
-
-        setProduct(prodRes.data.product);
-
-        // Merge Pricing Timeline (Our Price history + Competitor prices history) by date
-        const dataByDate: { [key: string]: any } = {};
-
-        // 1. Load our price timeline
-        historyRes.data.history.forEach((h: any) => {
-          const dateStr = new Date(h.changed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          if (!dataByDate[dateStr]) dataByDate[dateStr] = { date: dateStr };
-          dataByDate[dateStr]['Our Price'] = h.price;
-        });
-
-        // 2. Load competitor price timeline
-        competitorRes.data.competitorHistory.forEach((c: any) => {
-          const dateStr = new Date(c.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          if (!dataByDate[dateStr]) dataByDate[dateStr] = { date: dateStr };
-          dataByDate[dateStr][c.competitor] = c.price;
-        });
-
-        // Convert the object to an array and sort it chronologically (represented by index keys or timestamps)
-        const pricingArray = Object.values(dataByDate);
-        setPricingChartData(pricingArray);
-
-        // Load Demand Timeline
-        const demandArray = demandRes.data.demandHistory.map((d: any) => ({
-          date: new Date(d.recorded_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-          'Demand Index': d.demand_index,
-        }));
-        setDemandChartData(demandArray);
-
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Failed to load product details');
-      } finally {
-        setIsLoading(false);
-      }
+      await fetchProductData();
+      setIsLoading(false);
     };
 
-    fetchProductData();
+    initialLoad();
   }, [user, productId]);
+
+  // AI Pipeline Trigger
+  const runAiAnalysis = async () => {
+    setIsAnalyzing(true);
+    setProgressLogs([]);
+    setAnalysisError(null);
+    setAnalysisResult(null);
+
+    // 1. Start parallel database polling for agent checkmarks
+    const intervalId = setInterval(async () => {
+      try {
+        const progressRes = await api.get(`/ai-analysis/${productId}/latest`);
+        if (progressRes.data.recommendation && progressRes.data.recommendation.agent_outputs) {
+          setProgressLogs(progressRes.data.recommendation.agent_outputs);
+        }
+      } catch (pollErr) {
+        console.error('Polling progress failed:', pollErr);
+      }
+    }, 600);
+
+    try {
+      // 2. Post trigger
+      const runRes = await api.post(`/ai-analysis/${productId}/run`);
+      clearInterval(intervalId);
+
+      // Check for success output logs
+      const finalRes = await api.get(`/ai-analysis/${productId}/latest`);
+      if (finalRes.data.recommendation) {
+        setAnalysisResult(finalRes.data.recommendation);
+        setProgressLogs(finalRes.data.recommendation.agent_outputs || []);
+      } else {
+        setAnalysisResult(runRes.data.recommendation);
+      }
+
+      // Re-fetch graphs and price figures
+      await fetchProductData();
+    } catch (err: any) {
+      clearInterval(intervalId);
+      setAnalysisError(
+        err.response?.data?.message || err.response?.data?.error || 'Pricing analysis run encountered an error.'
+      );
+    } finally {
+      clearInterval(intervalId);
+    }
+  };
 
   if (authLoading || !user) {
     return (
@@ -137,7 +193,6 @@ export default function ProductDetailPage({ params }: PageProps) {
     );
   }
 
-  // Margin Calculation: (Price - Cost) / Price
   const grossProfit = product.current_price - product.cost_of_goods;
   const marginPercentage = (grossProfit / product.current_price) * 100;
 
@@ -156,7 +211,6 @@ export default function ProductDetailPage({ params }: PageProps) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', alignItems: 'start' }}>
         
-        {/* Dynamic Grid Layout */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           
           {/* Left Panel: Specifications */}
@@ -217,6 +271,34 @@ export default function ProductDetailPage({ params }: PageProps) {
                   </span>
                 </div>
               )}
+
+              {/* Step 6 Action Trigger */}
+              <button
+                onClick={runAiAnalysis}
+                disabled={isAnalyzing}
+                style={{
+                  marginTop: '1.5rem',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: '#4f46e5',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.95rem',
+                  fontWeight: 'bold',
+                  cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+                  opacity: isAnalyzing ? 0.7 : 1,
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  transition: 'background-color 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = '#4338ca'; }}
+                onMouseLeave={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = '#4f46e5'; }}
+              >
+                ⚡ Trigger AI Pricing Analysis
+              </button>
             </div>
           </div>
 
@@ -264,6 +346,139 @@ export default function ProductDetailPage({ params }: PageProps) {
         </div>
 
       </div>
+
+      {/* Progress Loading Overlay Modal */}
+      {isAnalyzing && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'sans-serif'
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            padding: '2rem',
+            borderRadius: '12px',
+            maxWidth: '500px',
+            width: '90%',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+            boxSizing: 'border-box'
+          }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: '0 0 1.5rem 0', color: '#111827', textAlign: 'center' }}>
+              AI pricing intelligence pipeline
+            </h3>
+
+            {/* List of Agents */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+              {[
+                { name: 'MARKET_INTELLIGENCE', title: 'Market Intelligence Agent', desc: 'Analyzes competitor prices', order: 1 },
+                { name: 'DEMAND_FORECASTING', title: 'Demand Forecasting Agent', desc: 'Evaluates traffic interest logs', order: 2 },
+                { name: 'INVENTORY_COST', title: 'Inventory & Cost Agent', desc: 'Calculates cost boundaries', order: 3 },
+                { name: 'PRICING_STRATEGY', title: 'Pricing Strategy Agent', desc: 'Determines new pricing', order: 4 },
+                { name: 'EXECUTION_COMPLIANCE', title: 'Execution Compliance Agent', desc: 'Enforces margin floor rules', order: 5 }
+              ].map((agent, index) => {
+                const output = progressLogs.find((p) => p.agent_name === agent.name);
+                const isCompleted = !!output;
+                
+                let statusText = 'Queued';
+                let statusColor = '#9ca3af';
+                let statusBg = '#f3f4f6';
+
+                if (isCompleted) {
+                  if (output.output?.error || output.error) {
+                    statusText = 'Failed ❌';
+                    statusColor = '#dc2626';
+                    statusBg = '#fee2e2';
+                  } else {
+                    statusText = 'Completed ✅';
+                    statusColor = '#059669';
+                    statusBg = '#ecfdf5';
+                  }
+                } else {
+                  // Running if previous is completed (or index 0)
+                  const prevCompleted = index === 0 || !!progressLogs.find((p) => p.run_order === agent.order - 1);
+                  if (prevCompleted && !analysisError) {
+                    statusText = 'Running 🔄';
+                    statusColor = '#2563eb';
+                    statusBg = '#eff6ff';
+                  }
+                }
+
+                return (
+                  <div key={agent.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                    <div>
+                      <strong style={{ fontSize: '0.9rem', color: '#1f2937', display: 'block' }}>{agent.title}</strong>
+                      <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{agent.desc}</span>
+                    </div>
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 'bold',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      color: statusColor,
+                      backgroundColor: statusBg
+                    }}>
+                      {statusText}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Error Message */}
+            {analysisError && (
+              <div style={{ padding: '0.75rem 1rem', backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                <strong>Error running analysis:</strong> {analysisError}
+              </div>
+            )}
+
+            {/* Outcome Display */}
+            {analysisResult && (
+              <div style={{ padding: '1rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#1e40af', fontWeight: 'bold' }}>Pipeline Result</h4>
+                <p style={{ margin: '0 0 0.25rem 0', color: '#374151' }}>
+                  Execution decision: <strong style={{ color: analysisResult.status === 'AUTO_EXECUTED' ? '#059669' : (analysisResult.status === 'FAILED' ? '#dc2626' : '#d97706') }}>
+                    {analysisResult.status.toUpperCase()}
+                  </strong>
+                </p>
+                <p style={{ margin: '0 0 0.5rem 0', color: '#374151' }}>
+                  Recommended Price: <strong>${analysisResult.recommended_price.toFixed(2)}</strong> (Confidence: {analysisResult.confidence_score}%)
+                </p>
+                <p style={{ margin: 0, fontStyle: 'italic', color: '#4b5563', fontSize: '0.8rem' }}>
+                  "{analysisResult.rationale}"
+                </p>
+              </div>
+            )}
+
+            {/* Close Overlay Trigger */}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                disabled={!analysisResult && !analysisError}
+                onClick={() => setIsAnalyzing(false)}
+                style={{
+                  padding: '0.5rem 1.5rem',
+                  backgroundColor: (!analysisResult && !analysisError) ? '#d1d5db' : '#374151',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontWeight: 'bold',
+                  cursor: (!analysisResult && !analysisError) ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Close Panel
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
