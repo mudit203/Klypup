@@ -56,7 +56,19 @@ export async function runOrchestratorPipeline(
   );
   const minMarginFloor = categoryMarginFloor ? categoryMarginFloor.min_margin : 0.0;
 
-  // 4. Create Recommendation in PENDING state
+  // 4. Invalidate any existing PENDING recommendations for this product (superseded by this new run)
+  await prisma.recommendation.updateMany({
+    where: {
+      product_id: productId,
+      status: RecommendationStatus.PENDING
+    },
+    data: {
+      status: RecommendationStatus.FAILED,
+      rationale: 'Superseded by a newer pricing analysis run.'
+    }
+  });
+
+  // 5. Create Recommendation in PENDING state
   const recommendation = await prisma.recommendation.create({
     data: {
       product_id: productId,

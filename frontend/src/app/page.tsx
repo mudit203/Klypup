@@ -47,6 +47,11 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Market Simulation States
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationSuccess, setSimulationSuccess] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
   // Fetch products catalog
   useEffect(() => {
     if (!user) return;
@@ -79,7 +84,7 @@ export default function DashboardPage() {
     }, 300); // 300ms debounce for search input
 
     return () => clearTimeout(delayDebounceFn);
-  }, [user, page, search, category, stockStatus, sortBy, sortOrder]);
+  }, [user, page, search, category, stockStatus, sortBy, sortOrder, refreshTrigger]);
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -94,6 +99,21 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     await logout();
     router.push('/login');
+  };
+
+  const handleSimulateMarketDay = async () => {
+    setIsSimulating(true);
+    setError(null);
+    setSimulationSuccess(null);
+    try {
+      await api.post('/simulation/run?triggerAi=true');
+      setSimulationSuccess('Market day simulation executed successfully! Stock levels, competitor listings, and demand indexes have updated, and AI calculations are processing in the background.');
+      setRefreshTrigger(prev => prev + 1);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to simulate market day.');
+    } finally {
+      setIsSimulating(false);
+    }
   };
 
   if (authLoading || !user) {
@@ -115,12 +135,32 @@ export default function DashboardPage() {
             Logged in as: <strong>{user.name}</strong> ({user.role}) | tenant: <code>{user.orgId}</code>
           </p>
         </div>
-        <button
-          onClick={handleLogout}
-          style={{ padding: '0.5rem 1rem', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-        >
-          Sign Out
-        </button>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {user.role === 'ADMIN' && (
+            <button
+              onClick={handleSimulateMarketDay}
+              disabled={isSimulating}
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#10b981',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isSimulating ? 'not-allowed' : 'pointer',
+                fontWeight: '600',
+                opacity: isSimulating ? 0.7 : 1
+              }}
+            >
+              {isSimulating ? 'Simulating...' : '⚡ Simulate Market Day'}
+            </button>
+          )}
+          <button
+            onClick={handleLogout}
+            style={{ padding: '0.5rem 1rem', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
+          >
+            Sign Out
+          </button>
+        </div>
       </header>
 
       {/* Main Content Area */}
@@ -164,6 +204,12 @@ export default function DashboardPage() {
         {error && (
           <div style={{ backgroundColor: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c', padding: '1rem', borderRadius: '4px', marginBottom: '1.5rem' }}>
             {error}
+          </div>
+        )}
+
+        {simulationSuccess && (
+          <div style={{ backgroundColor: '#d1fae5', border: '1px solid #a7f3d0', color: '#065f46', padding: '1rem', borderRadius: '4px', marginBottom: '1.5rem' }}>
+            {simulationSuccess}
           </div>
         )}
 

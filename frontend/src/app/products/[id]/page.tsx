@@ -47,6 +47,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [product, setProduct] = useState<ProductDetails | null>(null);
   const [pricingChartData, setPricingChartData] = useState<any[]>([]);
   const [demandChartData, setDemandChartData] = useState<any[]>([]);
+  const [activeRec, setActiveRec] = useState<any | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,18 +58,28 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<any | null>(null);
 
-  // Main data load function
+  // Action Modals & Notification state
+  const [isShowAgentDetails, setIsShowAgentDetails] = useState(false);
+  const [isModifyingPrice, setIsModifyingPrice] = useState(false);
+  const [overridePrice, setOverridePrice] = useState('');
+  const [isRejectingRec, setIsRejectingRec] = useState(false);
+  const [rejectionReasonText, setRejectionReasonText] = useState('');
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Main data load function (fetches details, charts, and latest AI recommendation)
   const fetchProductData = async () => {
     if (!user || !productId) return;
     try {
-      const [prodRes, historyRes, competitorRes, demandRes] = await Promise.all([
+      const [prodRes, historyRes, competitorRes, demandRes, latestRecRes] = await Promise.all([
         api.get(`/products/${productId}`),
         api.get(`/products/${productId}/price-history`),
         api.get(`/products/${productId}/competitor-prices`),
         api.get(`/products/${productId}/demand-signals`),
+        api.get(`/ai-analysis/${productId}/latest`)
       ]);
 
       setProduct(prodRes.data.product);
+      setActiveRec(latestRecRes.data.recommendation);
 
       // Merge Pricing Timeline (Our Price history + Competitor prices history) by date
       const dataByDate: { [key: string]: any } = {};
@@ -122,6 +133,7 @@ export default function ProductDetailPage({ params }: PageProps) {
     setProgressLogs([]);
     setAnalysisError(null);
     setAnalysisResult(null);
+    setNotification(null);
 
     // 1. Start parallel database polling for agent checkmarks
     const intervalId = setInterval(async () => {
@@ -161,6 +173,70 @@ export default function ProductDetailPage({ params }: PageProps) {
     }
   };
 
+  // Human Action 1: Approve Recommendation
+  const handleApproveDetail = async () => {
+    if (!activeRec) return;
+    setNotification(null);
+    try {
+      await api.post(`/recommendations/${activeRec.id}/approve`);
+      setNotification({ type: 'success', message: 'Price recommendation approved and storefront updated.' });
+      await fetchProductData();
+    } catch (err: any) {
+      setNotification({ type: 'error', message: err.response?.data?.error || 'Failed to approve recommendation.' });
+    }
+  };
+
+  // Human Action 2: Modify Price Recommendation
+  const handleModifyDetailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeRec) return;
+    
+    const priceNum = parseFloat(overridePrice);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      setNotification({ type: 'error', message: 'Please enter a valid price.' });
+      return;
+    }
+
+    setNotification(null);
+    setIsModifyingPrice(false);
+    setOverridePrice('');
+
+    try {
+      await api.post(`/recommendations/${activeRec.id}/modify`, {
+        new_price: priceNum
+      });
+      setNotification({ type: 'success', message: `Price modified and applied at $${priceNum.toFixed(2)}.` });
+      await fetchProductData();
+    } catch (err: any) {
+      setNotification({ type: 'error', message: err.response?.data?.error || 'Failed to override price.' });
+    }
+  };
+
+  // Human Action 3: Reject Price Recommendation
+  const handleRejectDetailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeRec) return;
+
+    if (rejectionReasonText.trim().length < 5) {
+      setNotification({ type: 'error', message: 'Please provide a reason with at least 5 characters.' });
+      return;
+    }
+
+    setNotification(null);
+    setIsRejectingRec(false);
+    setRejectionReasonText('');
+
+    try {
+      await api.post(`/recommendations/${activeRec.id}/reject`, {
+        reason: rejectionReasonText
+      });
+      setNotification({ type: 'success', message: 'Price recommendation rejected.' });
+      await fetchProductData();
+    } catch (err: any) {
+      setNotification({ type: 'error', message: err.response?.data?.error || 'Failed to reject recommendation.' });
+    }
+  };
+
   if (authLoading || !user) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>
@@ -196,110 +272,242 @@ export default function ProductDetailPage({ params }: PageProps) {
   const grossProfit = product.current_price - product.cost_of_goods;
   const marginPercentage = (grossProfit / product.current_price) * 100;
 
+  // Extract unique competitor names dynamically from the chart data array
+  const competitorKeys = Array.from(
+    new Set(
+      pricingChartData.flatMap(d => Object.keys(d).filter(k => k !== 'date' && k !== 'Our Price'))
+    )
+  );
+
   return (
     <div style={{ fontFamily: 'sans-serif', minHeight: '100vh', backgroundColor: '#f9fafb', padding: '2rem', boxSizing: 'border-box' }}>
       
       {/* Back Navigation Row */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           onClick={() => router.push('/')}
           style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', backgroundColor: '#fff', fontWeight: '600', color: '#374151' }}
         >
           ← Back to Dashboard
         </button>
+
+        <button
+          onClick={() => router.push('/approval-queue')}
+          style={{ padding: '0.5rem 1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
+        >
+          Approval Queue →
+        </button>
       </div>
+
+      {notification && (
+        <div style={{
+          backgroundColor: notification.type === 'success' ? '#d1fae5' : '#fee2e2',
+          border: '1px solid ' + (notification.type === 'success' ? '#a7f3d0' : '#fca5a5'),
+          color: notification.type === 'success' ? '#065f46' : '#b91c1c',
+          padding: '1rem',
+          borderRadius: '6px',
+          marginBottom: '1.5rem'
+        }}>
+          {notification.message}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', alignItems: 'start' }}>
         
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           
-          {/* Left Panel: Specifications */}
-          <div style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', borderBottom: '2px solid #f3f4f6', paddingBottom: '0.75rem', marginBottom: '1.25rem', color: '#111' }}>Product Details</h2>
+          {/* Left Panel Wrapper (Specs + AI Recommendation) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Product Name</span>
-                <strong style={{ fontSize: '1.125rem', color: '#111827' }}>{product.name}</strong>
-              </div>
+            {/* Left Panel: Specifications */}
+            <div style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', borderBottom: '2px solid #f3f4f6', paddingBottom: '0.75rem', marginBottom: '1.25rem', color: '#111' }}>Product Details</h2>
               
-              <div>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>SKU Code</span>
-                <code style={{ fontSize: '1rem', color: '#111827' }}>{product.sku}</code>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Category</span>
-                <span style={{ color: '#111827' }}>{product.category}</span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
-                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Cost of Goods</span>
-                  <strong style={{ color: '#111827' }}>${product.cost_of_goods.toFixed(2)}</strong>
+                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Product Name</span>
+                  <strong style={{ fontSize: '1.125rem', color: '#111827' }}>{product.name}</strong>
                 </div>
+                
                 <div>
-                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Retail Price</span>
-                  <strong style={{ color: '#4f46e5', fontSize: '1.125rem' }}>${product.current_price.toFixed(2)}</strong>
+                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>SKU Code</span>
+                  <code style={{ fontSize: '1rem', color: '#111827' }}>{product.sku}</code>
                 </div>
-              </div>
 
-              <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Calculated Profit Margin</span>
-                <strong style={{ color: marginPercentage < 15 ? '#b91c1c' : '#047857', fontSize: '1.125rem' }}>
-                  {marginPercentage.toFixed(1)}% Gross Margin
-                </strong>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
-                  Profit: ${grossProfit.toFixed(2)} per unit
-                </span>
-              </div>
+                <div>
+                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Category</span>
+                  <span style={{ color: '#111827' }}>{product.category}</span>
+                </div>
 
-              <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Inventory Level</span>
-                <strong style={{ color: '#111827' }}>{product.stock_level} units</strong>
-                <span style={{ display: 'inline-block', marginLeft: '0.5rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', backgroundColor: product.stock_status === 'in-stock' ? '#d1fae5' : '#fee2e2', color: product.stock_status === 'in-stock' ? '#065f46' : '#991b1b' }}>
-                  {product.stock_status.toUpperCase()}
-                </span>
-              </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
+                  <div>
+                    <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Cost of Goods</span>
+                    <strong style={{ color: '#111827' }}>${product.cost_of_goods.toFixed(2)}</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Retail Price</span>
+                    <strong style={{ color: '#4f46e5', fontSize: '1.125rem' }}>${product.current_price.toFixed(2)}</strong>
+                  </div>
+                </div>
 
-              {product.latest_demand && (
                 <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
-                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Current Demand Score</span>
-                  <strong style={{ color: '#111827' }}>{product.latest_demand.demand_index} Index</strong>
-                  <span style={{ display: 'inline-block', marginLeft: '0.5rem', fontSize: '0.875rem', color: product.latest_demand.trend === 'RISING' ? '#047857' : '#b91c1c', fontWeight: 'bold' }}>
-                    ({product.latest_demand.trend})
+                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Calculated Profit Margin</span>
+                  <strong style={{ color: marginPercentage < 15 ? '#b91c1c' : '#047857', fontSize: '1.125rem' }}>
+                    {marginPercentage.toFixed(1)}% Gross Margin
+                  </strong>
+                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+                    Profit: ${grossProfit.toFixed(2)} per unit
                   </span>
                 </div>
-              )}
 
-              {/* Step 6 Action Trigger */}
-              <button
-                onClick={runAiAnalysis}
-                disabled={isAnalyzing}
-                style={{
-                  marginTop: '1.5rem',
-                  padding: '0.75rem 1rem',
-                  backgroundColor: '#4f46e5',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '0.95rem',
-                  fontWeight: 'bold',
-                  cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                  opacity: isAnalyzing ? 0.7 : 1,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  transition: 'background-color 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem'
-                }}
-                onMouseEnter={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = '#4338ca'; }}
-                onMouseLeave={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = '#4f46e5'; }}
-              >
-                ⚡ Trigger AI Pricing Analysis
-              </button>
+                <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
+                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Inventory Level</span>
+                  <strong style={{ color: '#111827' }}>{product.stock_level} units</strong>
+                  <span style={{ display: 'inline-block', marginLeft: '0.5rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', backgroundColor: product.stock_status === 'in-stock' ? '#d1fae5' : '#fee2e2', color: product.stock_status === 'in-stock' ? '#065f46' : '#991b1b' }}>
+                    {product.stock_status.toUpperCase()}
+                  </span>
+                </div>
+
+                {product.latest_demand && (
+                  <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
+                    <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Current Demand Score</span>
+                    <strong style={{ color: '#111827' }}>{product.latest_demand.demand_index} Index</strong>
+                    <span style={{ display: 'inline-block', marginLeft: '0.5rem', fontSize: '0.875rem', color: product.latest_demand.trend === 'RISING' ? '#047857' : '#b91c1c', fontWeight: 'bold' }}>
+                      ({product.latest_demand.trend})
+                    </span>
+                  </div>
+                )}
+
+                <button
+                  onClick={runAiAnalysis}
+                  disabled={isAnalyzing}
+                  style={{
+                    marginTop: '1.5rem',
+                    padding: '0.75rem 1rem',
+                    backgroundColor: '#4f46e5',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.95rem',
+                    fontWeight: 'bold',
+                    cursor: isAnalyzing ? 'not-allowed' : 'pointer',
+                    opacity: isAnalyzing ? 0.7 : 1,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    transition: 'background-color 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
+                  onMouseEnter={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = '#4338ca'; }}
+                  onMouseLeave={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = '#4f46e5'; }}
+                >
+                  ⚡ Trigger AI Pricing Analysis
+                </button>
+              </div>
             </div>
+
+            {/* AI Recommendation Summary panel */}
+            {activeRec && (
+              <div style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f3f4f6', paddingBottom: '0.75rem', marginBottom: '1.25rem' }}>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0, color: '#111' }}>AI Pricing Recommendation</h2>
+                  
+                  {/* Status Badge */}
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    backgroundColor: activeRec.status === 'PENDING' ? '#fef3c7' : (activeRec.status === 'AUTO_EXECUTED' || activeRec.status === 'APPROVED' ? '#d1fae5' : '#fee2e2'),
+                    color: activeRec.status === 'PENDING' ? '#92400e' : (activeRec.status === 'AUTO_EXECUTED' || activeRec.status === 'APPROVED' ? '#065f46' : '#991b1b')
+                  }}>
+                    {activeRec.status.toUpperCase()}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div>
+                      <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Recommended Price</span>
+                      <strong style={{ color: '#4f46e5', fontSize: '1.25rem' }}>${activeRec.recommended_price.toFixed(2)}</strong>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>AI Confidence</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                        <div style={{ width: '50px', backgroundColor: '#e5e7eb', borderRadius: '9999px', height: '6px', overflow: 'hidden' }}>
+                          <div style={{ width: `${activeRec.confidence_score}%`, backgroundColor: '#3b82f6', height: '100%' }} />
+                        </div>
+                        <strong style={{ fontSize: '0.9rem', color: '#374151' }}>{activeRec.confidence_score}%</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block', marginBottom: '0.25rem' }}>Rationale Summary</span>
+                    <p style={{ margin: 0, padding: '0.75rem', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.85rem', color: '#4b5563', lineHeight: '1.4', fontStyle: 'italic' }}>
+                      "{activeRec.rationale}"
+                    </p>
+                  </div>
+
+                  {/* Collapsible 5-Agent Breakdown */}
+                  <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
+                    <button
+                      onClick={() => setIsShowAgentDetails(!isShowAgentDetails)}
+                      style={{ background: 'none', border: 'none', color: '#4f46e5', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', padding: 0 }}
+                    >
+                      {isShowAgentDetails ? '▼ Hide Agent Reasoning Reports' : '▶ Show Agent Reasoning Reports'}
+                    </button>
+
+                    {isShowAgentDetails && activeRec.agent_outputs && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+                        {activeRec.agent_outputs.map((agent: any) => (
+                          <div key={agent.id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.8rem', backgroundColor: '#f9fafb' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                              <strong style={{ color: '#374151' }}>{agent.run_order}. {agent.agent_name.replace('_', ' ')}</strong>
+                              <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#059669' }}>COMPLETED</span>
+                            </div>
+                            <p style={{ margin: 0, color: '#6b7280', lineHeight: '1.3' }}>{agent.summary}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Human Analyst Decision Buttons (If Pending) */}
+                  {activeRec.status === 'PENDING' && (user.role === 'ANALYST' || user.role === 'ADMIN') && (
+                    <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
+                      <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', display: 'block', marginBottom: '0.75rem' }}>
+                        Analyst Decision Queue Actions
+                      </span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                        <button
+                          onClick={handleApproveDetail}
+                          style={{ padding: '0.5rem', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
+                        >
+                          Approve Price
+                        </button>
+                        <button
+                          onClick={() => { setIsModifyingPrice(true); setOverridePrice(activeRec.recommended_price.toString()); }}
+                          style={{ padding: '0.5rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
+                        >
+                          Modify Price
+                        </button>
+                        <button
+                          onClick={() => { setIsRejectingRec(true); setRejectionReasonText(''); }}
+                          style={{ padding: '0.5rem', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
+                        >
+                          Reject Suggest
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            )}
+
           </div>
 
           {/* Right Panel: Recharts Timelines */}
@@ -317,8 +525,20 @@ export default function ProductDetailPage({ params }: PageProps) {
                     <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`]} />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                     <Line type="monotone" dataKey="Our Price" stroke="#4f46e5" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-                    <Line type="monotone" dataKey="Amazon" stroke="#ff9900" strokeWidth={2} dot={{ r: 2 }} connectNulls />
-                    <Line type="monotone" dataKey="BestBuy" stroke="#003b64" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+                    {competitorKeys.map((compName, idx) => {
+                      const colors = ['#ff9900', '#003b64', '#10b981', '#ef4444', '#8b5cf6'];
+                      return (
+                        <Line 
+                          key={compName} 
+                          type="monotone" 
+                          dataKey={compName} 
+                          stroke={colors[idx % colors.length]} 
+                          strokeWidth={2} 
+                          dot={{ r: 2 }} 
+                          connectNulls 
+                        />
+                      );
+                    })}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -402,7 +622,6 @@ export default function ProductDetailPage({ params }: PageProps) {
                     statusBg = '#ecfdf5';
                   }
                 } else {
-                  // Running if previous is completed (or index 0)
                   const prevCompleted = index === 0 || !!progressLogs.find((p) => p.run_order === agent.order - 1);
                   if (prevCompleted && !analysisError) {
                     statusText = 'Running 🔄';
@@ -479,6 +698,80 @@ export default function ProductDetailPage({ params }: PageProps) {
           </div>
         </div>
       )}
+
+      {/* Modify Price Modal Dialog */}
+      {isModifyingPrice && activeRec && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <form onSubmit={handleModifyDetailSubmit} style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', maxWidth: '400px', width: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: 'bold' }}>Override Recommended Price</h3>
+            <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.875rem', color: '#6b7280' }}>
+              AI Suggestion: ${activeRec.recommended_price.toFixed(2)}
+            </p>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem' }}>Custom Retail Price ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                required
+                value={overridePrice}
+                onChange={(e) => setOverridePrice(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setIsModifyingPrice(false)}
+                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', backgroundColor: '#fff', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', backgroundColor: '#3b82f6', color: '#fff', cursor: 'pointer', fontWeight: '600' }}
+              >
+                Apply Price
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Reject Recommendation Modal Dialog */}
+      {isRejectingRec && activeRec && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <form onSubmit={handleRejectDetailSubmit} style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', maxWidth: '400px', width: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: 'bold' }}>Reject Recommendation</h3>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem' }}>Rejection Reason (min 5 chars)</label>
+              <textarea
+                required
+                rows={3}
+                placeholder="Why are you rejecting this AI price suggestion?..."
+                value={rejectionReasonText}
+                onChange={(e) => setRejectionReasonText(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box', fontFamily: 'sans-serif' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setIsRejectingRec(false)}
+                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', backgroundColor: '#fff', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', backgroundColor: '#ef4444', color: '#fff', cursor: 'pointer', fontWeight: '600' }}
+              >
+                Reject Suggestion
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -7,7 +7,12 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
 import aiRoutes from './routes/ai.routes';
+import recommendationRoutes from './routes/recommendation.routes';
+import simulationRoutes from './routes/simulation.routes';
 import { SignupSchema } from '@klypup/shared';
+
+// Start background cron scheduler
+import './scheduler/marketSimulation.cron';
 
 dotenv.config();
 
@@ -24,6 +29,8 @@ app.use(morgan('dev'));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/ai-analysis', aiRoutes);
+app.use('/api/v1/recommendations', recommendationRoutes);
+app.use('/api/v1/simulation', simulationRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
