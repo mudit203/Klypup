@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ArrowLeft, ClipboardList, Play, CheckCircle2, AlertCircle, ShieldAlert, ChevronDown, Activity, Sparkles, TrendingUp, X } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -239,31 +240,42 @@ export default function ProductDetailPage({ params }: PageProps) {
 
   if (authLoading || !user) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-        <p style={{ fontSize: '1.25rem', fontWeight: '500' }}>Restoring session...</p>
+      <div className="flex justify-center items-center min-h-screen bg-[#F9FAFB]">
+        <p className="text-base font-semibold text-neutral-600 animate-pulse">Restoring session...</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div style={{ fontFamily: 'sans-serif', padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-        <p style={{ fontSize: '1.125rem' }}>Loading product details and history timelines...</p>
+      <div className="flex justify-center items-center min-h-screen bg-[#F9FAFB]">
+        <div className="text-center">
+          <svg className="animate-spin h-6 w-6 text-neutral-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <p className="text-xs font-semibold text-neutral-400">Loading product metrics and history timelines...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !product) {
     return (
-      <div style={{ fontFamily: 'sans-serif', padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-        <button
-          onClick={() => router.push('/')}
-          style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', backgroundColor: '#fff', marginBottom: '1.5rem', fontWeight: '600' }}
-        >
-          ← Back to Catalog
-        </button>
-        <div style={{ backgroundColor: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c', padding: '1rem', borderRadius: '4px' }}>
-          {error || 'Product not found'}
+      <div className="relative min-h-screen bg-[#F9FAFB] p-6 md:p-8 lg:p-12 font-sans">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:20px_20px] opacity-[0.18] pointer-events-none -z-10" />
+        <div className="mx-auto max-w-2xl space-y-6">
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center space-x-1.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 px-4 py-2.5 text-xs font-bold shadow-sm transition-all duration-200 ease-in-out cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Dashboard</span>
+          </button>
+          <div className="flex items-start space-x-2.5 rounded-xl bg-red-50/50 border border-red-200 p-4 text-xs text-red-700 font-semibold shadow-sm">
+            <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+            <span>{error || 'Product not found'}</span>
+          </div>
         </div>
       </div>
     );
@@ -280,288 +292,297 @@ export default function ProductDetailPage({ params }: PageProps) {
   );
 
   return (
-    <div style={{ fontFamily: 'sans-serif', minHeight: '100vh', backgroundColor: '#f9fafb', padding: '2rem', boxSizing: 'border-box' }}>
-      
+    <div className="relative min-h-screen bg-[#F9FAFB] p-6 md:p-8 lg:p-12 font-sans overflow-x-hidden">
+      {/* 20px faint background grid overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:20px_20px] opacity-[0.18] pointer-events-none -z-10" />
+
       {/* Back Navigation Row */}
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="flex justify-between items-center mb-8 select-none">
         <button
           onClick={() => router.push('/')}
-          style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', backgroundColor: '#fff', fontWeight: '600', color: '#374151' }}
+          className="flex items-center space-x-1.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 hover:text-neutral-900 px-4 py-2.5 text-xs font-bold shadow-sm transition-all duration-200 ease-in-out cursor-pointer"
         >
-          ← Back to Dashboard
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to Dashboard</span>
         </button>
 
         <button
           onClick={() => router.push('/approval-queue')}
-          style={{ padding: '0.5rem 1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
+          className="flex items-center space-x-1.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 px-4 py-2.5 text-xs font-bold shadow-sm transition-all duration-200 ease-in-out cursor-pointer"
         >
-          Approval Queue →
+          <ClipboardList className="h-4 w-4 text-neutral-700" />
+          <span>Approval Queue</span>
         </button>
       </div>
 
+      {/* Notifications */}
       {notification && (
-        <div style={{
-          backgroundColor: notification.type === 'success' ? '#d1fae5' : '#fee2e2',
-          border: '1px solid ' + (notification.type === 'success' ? '#a7f3d0' : '#fca5a5'),
-          color: notification.type === 'success' ? '#065f46' : '#b91c1c',
-          padding: '1rem',
-          borderRadius: '6px',
-          marginBottom: '1.5rem'
-        }}>
-          {notification.message}
+        <div className={`flex items-start space-x-2.5 rounded-xl border p-4 text-xs mb-8 animate-in fade-in duration-200 ${
+          notification.type === 'success' ? 'bg-emerald-50/50 border-emerald-200 text-emerald-800' : 'bg-red-50/50 border-red-200 text-red-800'
+        }`}>
+          {notification.type === 'success' ? (
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+          ) : (
+            <ShieldAlert className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+          )}
+          <div className="font-semibold">{notification.message}</div>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', alignItems: 'start' }}>
+      {/* Grid Layout Split */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+        {/* Left Column: Specs + AI Recommendation (5 Cols) */}
+        <div className="lg:col-span-5 flex flex-col gap-8">
           
-          {/* Left Panel Wrapper (Specs + AI Recommendation) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {/* Specifications Card */}
+          <section className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/80 shadow-xl shadow-neutral-100/50 p-6 md:p-8">
+            <h2 className="text-[12px] font-bold text-neutral-400 tracking-[0.05em] uppercase border-b border-neutral-100 pb-3 mb-5 select-none">
+              Product Details
+            </h2>
             
-            {/* Left Panel: Specifications */}
-            <div style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', borderBottom: '2px solid #f3f4f6', paddingBottom: '0.75rem', marginBottom: '1.25rem', color: '#111' }}>Product Details</h2>
+            <div className="space-y-4">
+              <div>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Product Name</span>
+                <span className="text-base font-bold text-neutral-900 leading-snug">{product.name}</span>
+              </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Product Name</span>
-                  <strong style={{ fontSize: '1.125rem', color: '#111827' }}>{product.name}</strong>
-                </div>
-                
-                <div>
-                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>SKU Code</span>
-                  <code style={{ fontSize: '1rem', color: '#111827' }}>{product.sku}</code>
-                </div>
+              <div>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">SKU Code</span>
+                <span className="text-xs font-mono text-neutral-600 bg-neutral-50 border border-neutral-200/50 px-2 py-0.5 rounded-md">
+                  {product.sku}
+                </span>
+              </div>
 
+              <div>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Category</span>
+                <span className="text-sm text-neutral-800 font-semibold">{product.category}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-neutral-100 pt-4">
                 <div>
-                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Category</span>
-                  <span style={{ color: '#111827' }}>{product.category}</span>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">Cost of Goods</span>
+                  <span className="text-sm font-bold text-neutral-800">${product.cost_of_goods.toFixed(2)}</span>
                 </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
-                  <div>
-                    <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Cost of Goods</span>
-                    <strong style={{ color: '#111827' }}>${product.cost_of_goods.toFixed(2)}</strong>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Retail Price</span>
-                    <strong style={{ color: '#4f46e5', fontSize: '1.125rem' }}>${product.current_price.toFixed(2)}</strong>
-                  </div>
-                </div>
-
-                <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
-                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Calculated Profit Margin</span>
-                  <strong style={{ color: marginPercentage < 15 ? '#b91c1c' : '#047857', fontSize: '1.125rem' }}>
-                    {marginPercentage.toFixed(1)}% Gross Margin
-                  </strong>
-                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
-                    Profit: ${grossProfit.toFixed(2)} per unit
+                <div>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">Retail Price</span>
+                  <span className="text-sm font-extrabold text-[#007AFF] hover:underline cursor-pointer transition-colors" onClick={() => setIsModifyingPrice(true)}>
+                    ${product.current_price.toFixed(2)}
                   </span>
                 </div>
+              </div>
 
-                <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
-                  <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Inventory Level</span>
-                  <strong style={{ color: '#111827' }}>{product.stock_level} units</strong>
-                  <span style={{ display: 'inline-block', marginLeft: '0.5rem', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', backgroundColor: product.stock_status === 'in-stock' ? '#d1fae5' : '#fee2e2', color: product.stock_status === 'in-stock' ? '#065f46' : '#991b1b' }}>
-                    {product.stock_status.toUpperCase()}
+              <div className="border-t border-neutral-100 pt-4">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Gross Profit Margin</span>
+                <div className="flex items-center space-x-2">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                    marginPercentage < 15 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                  }`}>
+                    {marginPercentage.toFixed(1)}% Margin
+                  </span>
+                  <span className="text-xs text-neutral-400 font-medium">
+                    (Profit: ${grossProfit.toFixed(2)} / unit)
                   </span>
                 </div>
+              </div>
 
-                {product.latest_demand && (
-                  <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
-                    <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Current Demand Score</span>
-                    <strong style={{ color: '#111827' }}>{product.latest_demand.demand_index} Index</strong>
-                    <span style={{ display: 'inline-block', marginLeft: '0.5rem', fontSize: '0.875rem', color: product.latest_demand.trend === 'RISING' ? '#047857' : '#b91c1c', fontWeight: 'bold' }}>
-                      ({product.latest_demand.trend})
+              <div className="border-t border-neutral-100 pt-4">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1.5">Inventory Level</span>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-semibold text-neutral-800">{product.stock_level} units</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold border uppercase tracking-wider ${
+                    product.stock_status === 'in-stock' ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20' : (product.stock_status === 'low-stock' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100')
+                  }`}>
+                    {product.stock_status.replace('-', ' ')}
+                  </span>
+                </div>
+              </div>
+
+              {product.latest_demand && (
+                <div className="border-t border-neutral-100 pt-4">
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Demand Index</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-semibold text-neutral-800">{product.latest_demand.demand_index} Index</span>
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold ${
+                      product.latest_demand.trend === 'RISING' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'
+                    }`}>
+                      {product.latest_demand.trend}
                     </span>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={runAiAnalysis}
+                disabled={isAnalyzing}
+                className="w-full flex items-center justify-center space-x-2 mt-6 rounded-xl bg-black hover:bg-neutral-900 disabled:bg-neutral-900/50 text-white py-3 px-4 text-xs font-bold shadow-md transition-all duration-200 ease-in-out cursor-pointer disabled:cursor-not-allowed select-none"
+              >
+                <Activity className="h-4 w-4 text-emerald-400" />
+                <span>Trigger AI Pricing Analysis</span>
+              </button>
+            </div>
+          </section>
+
+          {/* AI Recommendation Card */}
+          {activeRec && (
+            <section className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/80 shadow-xl shadow-neutral-100/50 p-6 md:p-8">
+              <div className="flex justify-between items-center border-b border-neutral-100 pb-3 mb-5 select-none">
+                <h2 className="text-[12px] font-bold text-neutral-400 tracking-[0.05em] uppercase">
+                  AI Recommendation
+                </h2>
+                
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-bold border tracking-wider ${
+                  activeRec.status === 'PENDING' 
+                    ? 'bg-amber-50 text-amber-700 border-amber-200/50' 
+                    : (activeRec.status === 'AUTO_EXECUTED' || activeRec.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/50' : 'bg-red-50 text-red-700 border-red-200/50')
+                }`}>
+                  {activeRec.status.replace('_', ' ')}
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">Recommended Price</span>
+                    <strong className="text-xl font-bold text-[#007AFF]">${activeRec.recommended_price.toFixed(2)}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-0.5">AI Confidence</span>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <div className="w-16 bg-neutral-100 rounded-full h-1.5 overflow-hidden border border-neutral-200/50">
+                        <div className="h-full bg-neutral-900 rounded-full" style={{ width: `${activeRec.confidence_score}%` }} />
+                      </div>
+                      <strong className="text-xs font-bold text-neutral-700">{activeRec.confidence_score}%</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Rationale</span>
+                  <p className="bg-neutral-50/50 border border-neutral-200/60 rounded-xl p-3.5 text-xs text-neutral-600 italic leading-relaxed">
+                    "{activeRec.rationale}"
+                  </p>
+                </div>
+
+                {/* Collapsible Agent Reasoning Breakdown */}
+                <div className="border-t border-neutral-100 pt-4">
+                  <button
+                    onClick={() => setIsShowAgentDetails(!isShowAgentDetails)}
+                    className="w-full flex items-center justify-between text-xs font-bold text-neutral-800 hover:text-neutral-950 transition-colors select-none cursor-pointer"
+                  >
+                    <span>Agent Analysis Reports</span>
+                    <ChevronDown className={`h-4 w-4 transform transition-transform duration-200 ${isShowAgentDetails ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isShowAgentDetails && activeRec.agent_outputs && (
+                    <div className="space-y-3 mt-4 animate-in fade-in duration-200">
+                      {activeRec.agent_outputs.map((agent: any) => (
+                        <div key={agent.id} className="p-3 border border-neutral-200/60 rounded-xl bg-neutral-50/20 text-xs shadow-sm">
+                          <div className="flex justify-between items-center mb-1">
+                            <strong className="text-neutral-850 font-bold">{agent.run_order}. {agent.agent_name.replace('_', ' ')}</strong>
+                            <span className="inline-flex px-1.5 py-0.5 rounded text-[8px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-100/50">COMPLETED</span>
+                          </div>
+                          <p className="text-[11px] text-neutral-500 leading-normal">{agent.summary}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Human Analyst Decision Buttons (If Pending) */}
+                {activeRec.status === 'PENDING' && (user.role === 'ANALYST' || user.role === 'ADMIN') && (
+                  <div className="border-t border-neutral-100 pt-5 mt-2">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-3 select-none">
+                      Analyst Queue Actions
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={handleApproveDetail}
+                        className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 text-[11px] font-bold shadow-sm transition-all duration-200 ease-in-out cursor-pointer"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => { setIsModifyingPrice(true); setOverridePrice(activeRec.recommended_price.toString()); }}
+                        className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white py-2.5 px-3 text-[11px] font-bold shadow-sm transition-all duration-200 ease-in-out cursor-pointer"
+                      >
+                        Modify
+                      </button>
+                      <button
+                        onClick={() => { setIsRejectingRec(true); setRejectionReasonText(''); }}
+                        className="rounded-xl bg-red-600 hover:bg-red-700 text-white py-2.5 px-3 text-[11px] font-bold shadow-sm transition-all duration-200 ease-in-out cursor-pointer"
+                      >
+                        Reject
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                <button
-                  onClick={runAiAnalysis}
-                  disabled={isAnalyzing}
-                  style={{
-                    marginTop: '1.5rem',
-                    padding: '0.75rem 1rem',
-                    backgroundColor: '#4f46e5',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '0.95rem',
-                    fontWeight: 'bold',
-                    cursor: isAnalyzing ? 'not-allowed' : 'pointer',
-                    opacity: isAnalyzing ? 0.7 : 1,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    transition: 'background-color 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem'
-                  }}
-                  onMouseEnter={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = '#4338ca'; }}
-                  onMouseLeave={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = '#4f46e5'; }}
-                >
-                  ⚡ Trigger AI Pricing Analysis
-                </button>
               </div>
+            </section>
+          )}
+
+        </div>
+
+        {/* Right Column: Recharts Timelines (7 Cols) */}
+        <div className="lg:col-span-7 flex flex-col gap-8">
+          
+          {/* Price Timeline Chart */}
+          <section className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/80 shadow-xl shadow-neutral-100/50 p-6 md:p-8">
+            <h3 className="text-[12px] font-bold text-neutral-400 tracking-[0.05em] uppercase border-b border-neutral-100 pb-3 mb-6 select-none">
+              Market Price Timeline (Last 30 Days)
+            </h3>
+            <div className="w-full h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={pricingChartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <YAxis domain={['auto', 'auto']} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <Tooltip 
+                    formatter={(value) => [`$${Number(value).toFixed(2)}`]} 
+                    contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontSize: '11px' }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
+                  <Line type="monotone" dataKey="Our Price" stroke="#000000" strokeWidth={3} dot={{ r: 3, fill: '#000000' }} activeDot={{ r: 5 }} connectNulls />
+                  {competitorKeys.map((compName, idx) => {
+                    const colors = ['#F59E0B', '#64748B', '#10B981', '#EF4444', '#a8a29e'];
+                    return (
+                      <Line 
+                        key={compName} 
+                        type="monotone" 
+                        dataKey={compName} 
+                        stroke={colors[idx % colors.length]} 
+                        strokeWidth={1.8} 
+                        dot={{ r: 2 }} 
+                        connectNulls 
+                      />
+                    );
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
             </div>
+          </section>
 
-            {/* AI Recommendation Summary panel */}
-            {activeRec && (
-              <div style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f3f4f6', paddingBottom: '0.75rem', marginBottom: '1.25rem' }}>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0, color: '#111' }}>AI Pricing Recommendation</h2>
-                  
-                  {/* Status Badge */}
-                  <span style={{
-                    display: 'inline-block',
-                    padding: '0.25rem 0.5rem',
-                    borderRadius: '9999px',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold',
-                    backgroundColor: activeRec.status === 'PENDING' ? '#fef3c7' : (activeRec.status === 'AUTO_EXECUTED' || activeRec.status === 'APPROVED' ? '#d1fae5' : '#fee2e2'),
-                    color: activeRec.status === 'PENDING' ? '#92400e' : (activeRec.status === 'AUTO_EXECUTED' || activeRec.status === 'APPROVED' ? '#065f46' : '#991b1b')
-                  }}>
-                    {activeRec.status.toUpperCase()}
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div>
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>Recommended Price</span>
-                      <strong style={{ color: '#4f46e5', fontSize: '1.25rem' }}>${activeRec.recommended_price.toFixed(2)}</strong>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block' }}>AI Confidence</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                        <div style={{ width: '50px', backgroundColor: '#e5e7eb', borderRadius: '9999px', height: '6px', overflow: 'hidden' }}>
-                          <div style={{ width: `${activeRec.confidence_score}%`, backgroundColor: '#3b82f6', height: '100%' }} />
-                        </div>
-                        <strong style={{ fontSize: '0.9rem', color: '#374151' }}>{activeRec.confidence_score}%</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span style={{ fontSize: '0.875rem', color: '#6b7280', display: 'block', marginBottom: '0.25rem' }}>Rationale Summary</span>
-                    <p style={{ margin: 0, padding: '0.75rem', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.85rem', color: '#4b5563', lineHeight: '1.4', fontStyle: 'italic' }}>
-                      "{activeRec.rationale}"
-                    </p>
-                  </div>
-
-                  {/* Collapsible 5-Agent Breakdown */}
-                  <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
-                    <button
-                      onClick={() => setIsShowAgentDetails(!isShowAgentDetails)}
-                      style={{ background: 'none', border: 'none', color: '#4f46e5', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', padding: 0 }}
-                    >
-                      {isShowAgentDetails ? '▼ Hide Agent Reasoning Reports' : '▶ Show Agent Reasoning Reports'}
-                    </button>
-
-                    {isShowAgentDetails && activeRec.agent_outputs && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
-                        {activeRec.agent_outputs.map((agent: any) => (
-                          <div key={agent.id} style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.8rem', backgroundColor: '#f9fafb' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                              <strong style={{ color: '#374151' }}>{agent.run_order}. {agent.agent_name.replace('_', ' ')}</strong>
-                              <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#059669' }}>COMPLETED</span>
-                            </div>
-                            <p style={{ margin: 0, color: '#6b7280', lineHeight: '1.3' }}>{agent.summary}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Human Analyst Decision Buttons (If Pending) */}
-                  {activeRec.status === 'PENDING' && (user.role === 'ANALYST' || user.role === 'ADMIN') && (
-                    <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1.5rem', marginTop: '0.5rem' }}>
-                      <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151', display: 'block', marginBottom: '0.75rem' }}>
-                        Analyst Decision Queue Actions
-                      </span>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                        <button
-                          onClick={handleApproveDetail}
-                          style={{ padding: '0.5rem', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
-                        >
-                          Approve Price
-                        </button>
-                        <button
-                          onClick={() => { setIsModifyingPrice(true); setOverridePrice(activeRec.recommended_price.toString()); }}
-                          style={{ padding: '0.5rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
-                        >
-                          Modify Price
-                        </button>
-                        <button
-                          onClick={() => { setIsRejectingRec(true); setRejectionReasonText(''); }}
-                          style={{ padding: '0.5rem', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}
-                        >
-                          Reject Suggest
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              </div>
-            )}
-
-          </div>
-
-          {/* Right Panel: Recharts Timelines */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            
-            {/* Price Timeline Chart */}
-            <div style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', margin: '0 0 1.5rem 0', color: '#111' }}>Market Price Timeline (Last 30 Days)</h3>
-              <div style={{ width: '100%', height: 260 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={pricingChartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                    <YAxis domain={['auto', 'auto']} tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`]} />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Line type="monotone" dataKey="Our Price" stroke="#4f46e5" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-                    {competitorKeys.map((compName, idx) => {
-                      const colors = ['#ff9900', '#003b64', '#10b981', '#ef4444', '#8b5cf6'];
-                      return (
-                        <Line 
-                          key={compName} 
-                          type="monotone" 
-                          dataKey={compName} 
-                          stroke={colors[idx % colors.length]} 
-                          strokeWidth={2} 
-                          dot={{ r: 2 }} 
-                          connectNulls 
-                        />
-                      );
-                    })}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
+          {/* Demand Timeline Chart */}
+          <section className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/80 shadow-xl shadow-neutral-100/50 p-6 md:p-8">
+            <h3 className="text-[12px] font-bold text-neutral-400 tracking-[0.05em] uppercase border-b border-neutral-100 pb-3 mb-6 select-none">
+              Demand Signal Index Timeline
+            </h3>
+            <div className="w-full h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={demandChartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="4 4" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <YAxis domain={[0, 'auto']} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontSize: '11px' }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
+                  <Line type="monotone" dataKey="Demand Index" stroke="#007AFF" strokeWidth={2.2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
-
-            {/* Demand Timeline Chart */}
-            <div style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', margin: '0 0 1.5rem 0', color: '#111' }}>Demand Signal Index Timeline</h3>
-              <div style={{ width: '100%', height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={demandChartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                    <YAxis domain={[0, 'auto']} tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Line type="monotone" dataKey="Demand Index" stroke="#0ea5e9" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-          </div>
+          </section>
 
         </div>
 
@@ -569,34 +590,14 @@ export default function ProductDetailPage({ params }: PageProps) {
 
       {/* Progress Loading Overlay Modal */}
       {isAnalyzing && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'sans-serif'
-        }}>
-          <div style={{
-            backgroundColor: '#fff',
-            padding: '2rem',
-            borderRadius: '12px',
-            maxWidth: '500px',
-            width: '90%',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-            boxSizing: 'border-box'
-          }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: '0 0 1.5rem 0', color: '#111827', textAlign: 'center' }}>
-              AI pricing intelligence pipeline
+        <div className="fixed inset-0 bg-neutral-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-white shadow-2xl p-6 md:p-8 max-w-md w-full animate-in zoom-in-95 duration-200">
+            <h3 className="text-base font-bold text-neutral-900 text-center mb-6 select-none">
+              AI Pricing Analysis Orchestrator
             </h3>
 
             {/* List of Agents */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="space-y-3.5 mb-6">
               {[
                 { name: 'MARKET_INTELLIGENCE', title: 'Market Intelligence Agent', desc: 'Analyzes competitor prices', order: 1 },
                 { name: 'DEMAND_FORECASTING', title: 'Demand Forecasting Agent', desc: 'Evaluates traffic interest logs', order: 2 },
@@ -608,42 +609,31 @@ export default function ProductDetailPage({ params }: PageProps) {
                 const isCompleted = !!output;
                 
                 let statusText = 'Queued';
-                let statusColor = '#9ca3af';
-                let statusBg = '#f3f4f6';
+                let statusClass = 'bg-neutral-50 text-neutral-400 border-neutral-200/50';
 
                 if (isCompleted) {
                   if (output.output?.error || output.error) {
-                    statusText = 'Failed ❌';
-                    statusColor = '#dc2626';
-                    statusBg = '#fee2e2';
+                    statusText = 'Failed';
+                    statusClass = 'bg-red-50 text-red-600 border-red-100';
                   } else {
-                    statusText = 'Completed ✅';
-                    statusColor = '#059669';
-                    statusBg = '#ecfdf5';
+                    statusText = 'Completed';
+                    statusClass = 'bg-emerald-50 text-emerald-700 border-emerald-100';
                   }
                 } else {
                   const prevCompleted = index === 0 || !!progressLogs.find((p) => p.run_order === agent.order - 1);
                   if (prevCompleted && !analysisError) {
-                    statusText = 'Running 🔄';
-                    statusColor = '#2563eb';
-                    statusBg = '#eff6ff';
+                    statusText = 'Running';
+                    statusClass = 'bg-blue-50 text-blue-700 border-blue-100';
                   }
                 }
 
                 return (
-                  <div key={agent.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                  <div key={agent.name} className="flex justify-between items-center p-3 rounded-xl border border-neutral-200/60 bg-neutral-50/20 shadow-sm">
                     <div>
-                      <strong style={{ fontSize: '0.9rem', color: '#1f2937', display: 'block' }}>{agent.title}</strong>
-                      <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>{agent.desc}</span>
+                      <strong className="text-xs font-bold text-neutral-800 block">{agent.title}</strong>
+                      <span className="text-[10px] text-neutral-400">{agent.desc}</span>
                     </div>
-                    <span style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '4px',
-                      color: statusColor,
-                      backgroundColor: statusBg
-                    }}>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${statusClass}`}>
                       {statusText}
                     </span>
                   </div>
@@ -653,45 +643,49 @@ export default function ProductDetailPage({ params }: PageProps) {
 
             {/* Error Message */}
             {analysisError && (
-              <div style={{ padding: '0.75rem 1rem', backgroundColor: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
-                <strong>Error running analysis:</strong> {analysisError}
+              <div className="flex items-start space-x-2 rounded-xl bg-red-50/50 border border-red-200 p-3.5 text-xs text-red-750 mb-6 animate-in fade-in duration-200">
+                <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="font-bold">Error running analysis:</strong> {analysisError}
+                </div>
               </div>
             )}
 
             {/* Outcome Display */}
             {analysisResult && (
-              <div style={{ padding: '1rem', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', color: '#1e40af', fontWeight: 'bold' }}>Pipeline Result</h4>
-                <p style={{ margin: '0 0 0.25rem 0', color: '#374151' }}>
-                  Execution decision: <strong style={{ color: analysisResult.status === 'AUTO_EXECUTED' ? '#059669' : (analysisResult.status === 'FAILED' ? '#dc2626' : '#d97706') }}>
-                    {analysisResult.status.toUpperCase()}
-                  </strong>
-                </p>
-                <p style={{ margin: '0 0 0.5rem 0', color: '#374151' }}>
-                  Recommended Price: <strong>${analysisResult.recommended_price.toFixed(2)}</strong> (Confidence: {analysisResult.confidence_score}%)
-                </p>
-                <p style={{ margin: 0, fontStyle: 'italic', color: '#4b5563', fontSize: '0.8rem' }}>
-                  "{analysisResult.rationale}"
-                </p>
+              <div className="bg-neutral-50/50 border border-neutral-250/60 rounded-xl p-4 text-xs mb-6 animate-in fade-in duration-200">
+                <div className="flex items-center space-x-1.5 mb-2.5">
+                  <Sparkles className="h-4 w-4 text-[#007AFF]" />
+                  <h4 className="text-xs font-bold text-neutral-900">Pipeline Result</h4>
+                </div>
+                <div className="space-y-1 text-neutral-700">
+                  <p>
+                    Execution: <strong className={analysisResult.status === 'AUTO_EXECUTED' ? 'text-emerald-700' : 'text-amber-700'}>
+                      {analysisResult.status.replace('_', ' ')}
+                    </strong>
+                  </p>
+                  <p>
+                    Recommended Price: <strong>${analysisResult.recommended_price.toFixed(2)}</strong> (Confidence: {analysisResult.confidence_score}%)
+                  </p>
+                  <p className="mt-2 text-[11px] font-medium text-neutral-500 italic border-l-2 border-neutral-300 pl-2">
+                    "{analysisResult.rationale}"
+                  </p>
+                </div>
               </div>
             )}
 
             {/* Close Overlay Trigger */}
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div className="flex justify-center select-none">
               <button
                 disabled={!analysisResult && !analysisError}
                 onClick={() => setIsAnalyzing(false)}
-                style={{
-                  padding: '0.5rem 1.5rem',
-                  backgroundColor: (!analysisResult && !analysisError) ? '#d1d5db' : '#374151',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontWeight: 'bold',
-                  cursor: (!analysisResult && !analysisError) ? 'not-allowed' : 'pointer'
-                }}
+                className={`rounded-xl px-6 py-2.5 text-xs font-bold shadow-md transition-all duration-200 ease-in-out cursor-pointer ${
+                  (!analysisResult && !analysisError) 
+                    ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200/50' 
+                    : 'bg-black hover:bg-neutral-900 text-white'
+                }`}
               >
-                Close Panel
+                Close Pipeline
               </button>
             </div>
 
@@ -701,34 +695,34 @@ export default function ProductDetailPage({ params }: PageProps) {
 
       {/* Modify Price Modal Dialog */}
       {isModifyingPrice && activeRec && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <form onSubmit={handleModifyDetailSubmit} style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', maxWidth: '400px', width: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: 'bold' }}>Override Recommended Price</h3>
-            <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.875rem', color: '#6b7280' }}>
+        <div className="fixed inset-0 bg-neutral-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleModifyDetailSubmit} className="bg-white rounded-2xl border border-white shadow-2xl p-6 md:p-8 max-w-sm w-full animate-in zoom-in-95 duration-200">
+            <h3 className="text-sm font-bold text-neutral-900 mb-1 select-none">Override Recommended Price</h3>
+            <p className="text-xs text-neutral-400 mb-5 select-none">
               AI Suggestion: ${activeRec.recommended_price.toFixed(2)}
             </p>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem' }}>Custom Retail Price ($)</label>
+            <div className="space-y-2 mb-6">
+              <label className="text-[10px] font-bold text-neutral-700 uppercase tracking-wider block">Custom Retail Price ($)</label>
               <input
                 type="number"
                 step="0.01"
                 required
                 value={overridePrice}
                 onChange={(e) => setOverridePrice(e.target.value)}
-                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box' }}
+                className="w-full rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 text-sm text-neutral-900 focus:bg-white focus:border-neutral-950 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.04)] outline-none transition-all duration-200"
               />
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <div className="flex space-x-2.5 justify-end select-none">
               <button
                 type="button"
                 onClick={() => setIsModifyingPrice(false)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', backgroundColor: '#fff', cursor: 'pointer' }}
+                className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 px-4 py-2.5 text-xs font-bold text-neutral-700 shadow-sm transition-all duration-200 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', backgroundColor: '#3b82f6', color: '#fff', cursor: 'pointer', fontWeight: '600' }}
+                className="rounded-xl bg-[#007AFF] hover:bg-[#0062cc] text-white px-4 py-2.5 text-xs font-bold shadow-md transition-all duration-200 cursor-pointer"
               >
                 Apply Price
               </button>
@@ -739,31 +733,31 @@ export default function ProductDetailPage({ params }: PageProps) {
 
       {/* Reject Recommendation Modal Dialog */}
       {isRejectingRec && activeRec && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <form onSubmit={handleRejectDetailSubmit} style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', maxWidth: '400px', width: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: 'bold' }}>Reject Recommendation</h3>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem' }}>Rejection Reason (min 5 chars)</label>
+        <div className="fixed inset-0 bg-neutral-950/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleRejectDetailSubmit} className="bg-white rounded-2xl border border-white shadow-2xl p-6 md:p-8 max-w-sm w-full animate-in zoom-in-95 duration-200">
+            <h3 className="text-sm font-bold text-neutral-900 mb-4 select-none">Reject Recommendation</h3>
+            <div className="space-y-2 mb-6">
+              <label className="text-[10px] font-bold text-neutral-700 uppercase tracking-wider block">Rejection Reason (min 5 chars)</label>
               <textarea
                 required
                 rows={3}
                 placeholder="Why are you rejecting this AI price suggestion?..."
                 value={rejectionReasonText}
                 onChange={(e) => setRejectionReasonText(e.target.value)}
-                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box', fontFamily: 'sans-serif' }}
+                className="w-full rounded-xl border border-neutral-200 bg-neutral-50/50 p-3 text-xs text-neutral-900 focus:bg-white focus:border-neutral-950 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.04)] outline-none transition-all duration-200 resize-none font-sans"
               />
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <div className="flex space-x-2.5 justify-end select-none">
               <button
                 type="button"
                 onClick={() => setIsRejectingRec(false)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', backgroundColor: '#fff', cursor: 'pointer' }}
+                className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 px-4 py-2.5 text-xs font-bold text-neutral-700 shadow-sm transition-all duration-200 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', backgroundColor: '#ef4444', color: '#fff', cursor: 'pointer', fontWeight: '600' }}
+                className="rounded-xl bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 text-xs font-bold shadow-md transition-all duration-200 cursor-pointer"
               >
                 Reject Suggestion
               </button>

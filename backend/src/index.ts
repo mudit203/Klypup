@@ -9,6 +9,8 @@ import productRoutes from './routes/product.routes';
 import aiRoutes from './routes/ai.routes';
 import recommendationRoutes from './routes/recommendation.routes';
 import simulationRoutes from './routes/simulation.routes';
+import adminRoutes from './routes/admin.routes';
+import auditRoutes from './routes/audit.routes';
 import { SignupSchema } from '@klypup/shared';
 
 // Start background cron scheduler
@@ -31,6 +33,8 @@ app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/ai-analysis', aiRoutes);
 app.use('/api/v1/recommendations', recommendationRoutes);
 app.use('/api/v1/simulation', simulationRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/audit', auditRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
