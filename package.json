@@ -11,7 +11,7 @@
     "build:frontend": "pnpm --filter frontend build",
     "build": "pnpm build:shared && pnpm build:backend && pnpm build:frontend",
     "vercel-build": "pnpm build:shared && pnpm build:frontend",
-    "render-build": "pnpm build:shared && pnpm --filter backend prisma generate && pnpm build:backend",
+    "render-build": "pnpm build:shared && pnpm --filter backend exec prisma generate && pnpm build:backend",
     "render-start": "pnpm --filter backend start"
   }
 }

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
+import { ArrowLeft, CheckCircle2, AlertCircle, ClipboardList, X } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -80,7 +81,7 @@ export default function ApprovalQueuePage() {
     setRecommendations(prev => prev.filter(r => r.id !== rec.id));
 
     try {
-      const res = await api.post(`/recommendations/${rec.id}/approve`);
+      await api.post(`/recommendations/${rec.id}/approve`);
       setSuccessMessage(`Approved recommendation for ${rec.product.name} at $${rec.recommended_price.toFixed(2)}.`);
     } catch (err: any) {
       // Revert on error
@@ -111,7 +112,7 @@ export default function ApprovalQueuePage() {
     setRecommendations(prev => prev.filter(r => r.id !== rec.id));
 
     try {
-      const res = await api.post(`/recommendations/${rec.id}/modify`, {
+      await api.post(`/recommendations/${rec.id}/modify`, {
         new_price: priceNum
       });
       setSuccessMessage(`Price for ${rec.product.name} modified and set to $${priceNum.toFixed(2)}.`);
@@ -142,7 +143,7 @@ export default function ApprovalQueuePage() {
     setRecommendations(prev => prev.filter(r => r.id !== rec.id));
 
     try {
-      const res = await api.post(`/recommendations/${rec.id}/reject`, {
+      await api.post(`/recommendations/${rec.id}/reject`, {
         reason: rejectReason
       });
       setSuccessMessage(`Rejected pricing recommendation for ${rec.product.name}.`);
@@ -154,129 +155,171 @@ export default function ApprovalQueuePage() {
 
   if (authLoading || !user) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-        <p style={{ fontSize: '1.25rem', fontWeight: '500' }}>Restoring session...</p>
+      <div className="flex justify-center items-center min-h-screen bg-[#F9FAFB]">
+        <p className="text-base font-semibold text-neutral-600 animate-pulse">Restoring session...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ fontFamily: 'sans-serif', minHeight: '100vh', backgroundColor: '#f9fafb', padding: '2rem', boxSizing: 'border-box' }}>
+    <div className="relative min-h-screen bg-[#F9FAFB] p-6 md:p-8 lg:p-12 font-sans overflow-x-hidden">
+      {/* 20px faint background grid overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:20px_20px] opacity-[0.18] pointer-events-none -z-10" />
       
-      {/* Back Header panel */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '1rem 2rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '2rem' }}>
+      {/* Top Header Panel */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 select-none">
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0, color: '#111' }}>Pending Approval Queue</h1>
-          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#6b7280' }}>
-            Review dynamic pricing recommendations scoped to: <strong>{user.orgId}</strong>
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#000000] flex items-center justify-center shadow-sm">
+              <span className="text-white font-black text-sm tracking-wider font-mono">K</span>
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-[#000000] uppercase">Klypup</h1>
+          </div>
+          <p className="mt-1 text-xs text-neutral-400 font-semibold tracking-wide">
+            Tenant ID: <code className="bg-neutral-100 px-1 py-0.5 rounded text-neutral-700">{user.orgId}</code> • Authenticated as: <span className="text-neutral-700">{user.name}</span> ({user.role.toLowerCase()})
           </p>
         </div>
-        <button
-          onClick={() => router.push('/')}
-          style={{ padding: '0.5rem 1rem', backgroundColor: '#4f46e5', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
-        >
-          ← Back to Catalog
-        </button>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center space-x-1.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 px-4 py-2.5 text-xs font-bold shadow-sm transition-all duration-200 ease-in-out cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Catalog</span>
+          </button>
+        </div>
       </header>
 
-      {/* Main Container */}
-      <main style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>
+      {/* Main Content Area: Glassmorphic Container */}
+      <main className="bg-white/70 backdrop-blur-md rounded-2xl border border-white/80 shadow-xl shadow-neutral-100/50 p-6 md:p-8">
         
+        {/* Title Section */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6 pb-5 border-b border-neutral-100">
+          <div>
+            <h2 className="text-lg font-bold text-neutral-900">Pending Approval Queue</h2>
+            <p className="text-xs text-neutral-400 font-semibold mt-0.5">Review dynamic pricing recommendations before they are published.</p>
+          </div>
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-neutral-100 text-neutral-800 border border-neutral-200">
+            {recommendations.length} Pending Approval
+          </span>
+        </div>
+
+        {/* Notifications */}
         {error && (
-          <div style={{ backgroundColor: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c', padding: '1rem', borderRadius: '4px', marginBottom: '1.5rem' }}>
-            {error}
+          <div className="flex items-start space-x-2.5 rounded-xl bg-red-50/50 border border-red-200 p-4 text-xs text-red-700 mb-6 animate-in fade-in duration-200">
+            <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+            <div className="font-semibold">{error}</div>
           </div>
         )}
 
         {successMessage && (
-          <div style={{ backgroundColor: '#d1fae5', border: '1px solid #a7f3d0', color: '#065f46', padding: '1rem', borderRadius: '4px', marginBottom: '1.5rem' }}>
-            {successMessage}
+          <div className="flex items-start space-x-2.5 rounded-xl bg-emerald-50/50 border border-emerald-200 p-4 text-xs text-emerald-800 mb-6 animate-in fade-in duration-200">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="font-semibold">{successMessage}</div>
           </div>
         )}
 
+        {/* Recommendations Table / Grid */}
         {isLoading ? (
-          <div style={{ padding: '4rem 0', textAlign: 'center', color: '#6b7280' }}>
-            <p>Loading pending pricing approvals...</p>
+          <div className="py-24 text-center">
+            <svg className="animate-spin h-6 w-6 text-neutral-400 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <p className="text-xs font-semibold text-neutral-400">Loading pending pricing approvals...</p>
           </div>
         ) : recommendations.length === 0 ? (
-          <div style={{ padding: '4rem 0', textAlign: 'center', color: '#6b7280', border: '1px dashed #d1d5db', borderRadius: '6px' }}>
-            <p style={{ fontSize: '1.125rem', fontWeight: '500', margin: 0 }}>No recommendations pending review</p>
-            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem' }}>
-              All recommendations have been auto-executed, blocked, or processed by analysts.
-            </p>
+          <div className="py-20 text-center border border-dashed border-neutral-200 rounded-xl bg-neutral-50/20 select-none">
+            <ClipboardList className="h-8 w-8 text-neutral-300 mx-auto mb-2.5" />
+            <h3 className="text-sm font-bold text-neutral-800">No recommendations pending review</h3>
+            <p className="text-xs text-neutral-400 mt-1">All recommendations have been auto-executed, blocked, or processed by analysts.</p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <div className="overflow-x-auto -mx-6 md:-mx-8">
+            <table className="w-full border-collapse text-left min-w-[900px]">
               <thead>
-                <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                  <th style={{ padding: '0.75rem 1rem', color: '#374151', fontWeight: '600' }}>Product Details</th>
-                  <th style={{ padding: '0.75rem 1rem', color: '#374151', fontWeight: '600' }}>Current Price</th>
-                  <th style={{ padding: '0.75rem 1rem', color: '#374151', fontWeight: '600' }}>AI Recommended</th>
-                  <th style={{ padding: '0.75rem 1rem', color: '#374151', fontWeight: '600' }}>Delta</th>
-                  <th style={{ padding: '0.75rem 1rem', color: '#374151', fontWeight: '600' }}>AI Confidence</th>
-                  <th style={{ padding: '0.75rem 1rem', color: '#374151', fontWeight: '600' }}>Trigger</th>
-                  <th style={{ padding: '0.75rem 1rem', color: '#374151', fontWeight: '600' }}>Age</th>
-                  <th style={{ padding: '0.75rem 1rem', color: '#374151', fontWeight: '600', textAlign: 'center' }}>Actions</th>
+                <tr className="border-b border-neutral-150">
+                  <th className="py-3.5 px-6 text-[12px] font-bold text-neutral-400 uppercase tracking-[0.05em]">Product Details</th>
+                  <th className="py-3.5 px-6 text-[12px] font-bold text-neutral-400 uppercase tracking-[0.05em]">Current Price</th>
+                  <th className="py-3.5 px-6 text-[12px] font-bold text-neutral-400 uppercase tracking-[0.05em]">AI Recommended</th>
+                  <th className="py-3.5 px-6 text-[12px] font-bold text-neutral-400 uppercase tracking-[0.05em]">Delta</th>
+                  <th className="py-3.5 px-6 text-[12px] font-bold text-neutral-400 uppercase tracking-[0.05em]">AI Confidence</th>
+                  <th className="py-3.5 px-6 text-[12px] font-bold text-neutral-400 uppercase tracking-[0.05em]">Trigger</th>
+                  <th className="py-3.5 px-6 text-[12px] font-bold text-neutral-400 uppercase tracking-[0.05em]">Age</th>
+                  <th className="py-3.5 px-6 text-[12px] font-bold text-neutral-400 uppercase tracking-[0.05em] text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-neutral-100">
                 {recommendations.map((rec) => {
                   const priceDiff = rec.recommended_price - rec.current_price;
                   const percentDiff = (priceDiff / rec.current_price) * 100;
                   const isIncrease = priceDiff > 0;
-                  
+
                   return (
                     <tr
                       key={rec.id}
-                      style={{ borderBottom: '1px solid #f3f4f6' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9fafb')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                      className="group hover:bg-neutral-50/50 transition-all duration-200 ease-in-out"
                     >
-                      <td style={{ padding: '1rem' }}>
-                        <strong style={{ display: 'block', color: '#111827', cursor: 'pointer' }} onClick={() => router.push(`/products/${rec.product_id}`)}>
+                      <td className="py-4 px-6 text-sm font-bold text-neutral-900">
+                        <span 
+                          onClick={() => router.push(`/products/${rec.product_id}`)}
+                          className="hover:underline cursor-pointer text-neutral-900 hover:text-black font-bold block"
+                        >
                           {rec.product.name}
-                        </strong>
-                        <code style={{ fontSize: '0.8rem', color: '#6b7280' }}>{rec.product.sku}</code>
+                        </span>
+                        <code className="text-[11px] font-mono text-neutral-400 font-normal">{rec.product.sku}</code>
                       </td>
-                      <td style={{ padding: '1rem', color: '#111827' }}>${rec.current_price.toFixed(2)}</td>
-                      <td style={{ padding: '1rem', fontWeight: '600', color: '#4f46e5' }}>${rec.recommended_price.toFixed(2)}</td>
-                      <td style={{ padding: '1rem', color: isIncrease ? '#047857' : '#b91c1c', fontWeight: '500' }}>
+                      <td className="py-4 px-6 text-sm font-semibold text-neutral-700">
+                        ${rec.current_price.toFixed(2)}
+                      </td>
+                      <td className="py-4 px-6 text-sm font-bold text-[#007AFF]">
+                        ${rec.recommended_price.toFixed(2)}
+                      </td>
+                      <td className={`py-4 px-6 text-sm font-semibold ${isIncrease ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {isIncrease ? '▲' : '▼'} ${Math.abs(priceDiff).toFixed(2)} ({percentDiff.toFixed(1)}%)
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <div style={{ width: '60px', backgroundColor: '#e5e7eb', borderRadius: '9999px', height: '8px', overflow: 'hidden' }}>
-                            <div style={{ width: `${rec.confidence_score}%`, backgroundColor: '#3b82f6', height: '100%' }} />
+                      <td className="py-4 px-6 text-sm">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-16 bg-neutral-100 rounded-full h-1.5 overflow-hidden border border-neutral-200/50">
+                            <div 
+                              style={{ width: `${rec.confidence_score}%` }} 
+                              className={`h-full ${
+                                rec.confidence_score >= 80 
+                                  ? 'bg-emerald-500' 
+                                  : rec.confidence_score >= 50 
+                                  ? 'bg-blue-500' 
+                                  : 'bg-amber-500'
+                              }`} 
+                            />
                           </div>
-                          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#374151' }}>{rec.confidence_score}%</span>
+                          <span className="text-xs font-bold text-neutral-700">{rec.confidence_score}%</span>
                         </div>
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <span style={{ display: 'inline-block', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', backgroundColor: '#eff6ff', color: '#1e40af' }}>
-                          {rec.trigger}
+                      <td className="py-4 px-6 text-xs">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md font-bold uppercase tracking-wider text-[10px] bg-neutral-100 text-neutral-800 border border-neutral-200">
+                          {rec.trigger.toLowerCase()}
                         </span>
                       </td>
-                      <td style={{ padding: '1rem', color: '#4b5563', fontSize: '0.875rem' }}>
+                      <td className="py-4 px-6 text-xs text-neutral-400 font-medium">
                         {new Date(rec.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td style={{ padding: '1rem', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center justify-center space-x-2">
                           <button
                             onClick={() => handleApprove(rec)}
-                            style={{ padding: '0.35rem 0.75rem', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
+                            className="flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm transition-colors duration-150 cursor-pointer"
                           >
                             Approve
                           </button>
                           <button
                             onClick={() => { setActiveModifyRec(rec); setCustomPrice(rec.recommended_price.toString()); }}
-                            style={{ padding: '0.35rem 0.75rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
+                            className="flex items-center justify-center bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm transition-colors duration-150 cursor-pointer"
                           >
                             Modify
                           </button>
                           <button
                             onClick={() => { setActiveRejectRec(rec); setRejectReason(''); }}
-                            style={{ padding: '0.35rem 0.75rem', backgroundColor: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
+                            className="flex items-center justify-center bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm transition-colors duration-150 cursor-pointer"
                           >
                             Reject
                           </button>
@@ -294,35 +337,54 @@ export default function ApprovalQueuePage() {
 
       {/* Modify Price Modal Dialog */}
       {activeModifyRec && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <form onSubmit={handleModifySubmit} style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', maxWidth: '400px', width: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: 'bold' }}>Override Recommended Price</h3>
-            <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.875rem', color: '#6b7280' }}>
-              Product: <strong>{activeModifyRec.product.name}</strong><br />
-              AI Suggestion: ${activeModifyRec.recommended_price.toFixed(2)}
-            </p>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem' }}>Custom Retail Price ($)</label>
-              <input
-                type="number"
-                step="0.01"
-                required
-                value={customPrice}
-                onChange={(e) => setCustomPrice(e.target.value)}
-                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box' }}
-              />
+        <div className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form 
+            onSubmit={handleModifySubmit} 
+            className="bg-white rounded-2xl border border-neutral-200/60 p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-150 animate-out fade-out"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-neutral-900">Override Recommended Price</h3>
+              <button 
+                type="button" 
+                onClick={() => setActiveModifyRec(null)} 
+                className="text-neutral-400 hover:text-neutral-900 p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            
+            <div className="space-y-3 mb-5">
+              <p className="text-xs text-neutral-500 font-medium">
+                Product: <strong className="text-neutral-800">{activeModifyRec.product.name}</strong>
+              </p>
+              <p className="text-xs text-neutral-500 font-medium">
+                AI Suggestion: <strong className="text-neutral-800">${activeModifyRec.recommended_price.toFixed(2)}</strong>
+              </p>
+              
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1.5">Custom Retail Price ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={customPrice}
+                  onChange={(e) => setCustomPrice(e.target.value)}
+                  className="block w-full rounded-xl border border-neutral-200/80 bg-neutral-50 py-2.5 px-3.5 text-neutral-900 placeholder-neutral-400 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.04)] focus:border-neutral-950 focus:bg-white focus:ring-1 focus:ring-neutral-950 text-sm transition-all duration-200 outline-none"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 justify-end">
               <button
                 type="button"
                 onClick={() => setActiveModifyRec(null)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', backgroundColor: '#fff', cursor: 'pointer' }}
+                className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 px-4 py-2.5 text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', backgroundColor: '#3b82f6', color: '#fff', cursor: 'pointer', fontWeight: '600' }}
+                className="rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2.5 text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer"
               >
                 Apply Price
               </button>
@@ -333,34 +395,51 @@ export default function ApprovalQueuePage() {
 
       {/* Reject Recommendation Modal Dialog */}
       {activeRejectRec && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <form onSubmit={handleRejectSubmit} style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', maxWidth: '400px', width: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: 'bold' }}>Reject Recommendation</h3>
-            <p style={{ margin: '0 0 1.5rem 0', fontSize: '0.875rem', color: '#6b7280' }}>
-              Product: <strong>{activeRejectRec.product.name}</strong>
-            </p>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem' }}>Rejection Reason (min 5 chars)</label>
-              <textarea
-                required
-                rows={3}
-                placeholder="Why are you rejecting this AI price suggestion?..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                style={{ width: '100%', padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', boxSizing: 'border-box', fontFamily: 'sans-serif' }}
-              />
+        <div className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form 
+            onSubmit={handleRejectSubmit} 
+            className="bg-white rounded-2xl border border-neutral-200/60 p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-150 animate-out fade-out"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-neutral-900">Reject Recommendation</h3>
+              <button 
+                type="button" 
+                onClick={() => setActiveRejectRec(null)} 
+                className="text-neutral-400 hover:text-neutral-900 p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            
+            <div className="space-y-3 mb-5">
+              <p className="text-xs text-neutral-500 font-medium">
+                Product: <strong className="text-neutral-800">{activeRejectRec.product.name}</strong>
+              </p>
+              
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1.5">Rejection Reason (min 5 characters)</label>
+                <textarea
+                  required
+                  rows={3}
+                  placeholder="Why are you rejecting this AI price suggestion?..."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  className="block w-full rounded-xl border border-neutral-200/80 bg-neutral-50 py-2.5 px-3.5 text-neutral-900 placeholder-neutral-400 shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.04)] focus:border-neutral-950 focus:bg-white focus:ring-1 focus:ring-neutral-950 text-sm transition-all duration-200 outline-none resize-none font-sans"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 justify-end">
               <button
                 type="button"
                 onClick={() => setActiveRejectRec(null)}
-                style={{ padding: '0.5rem 1rem', border: '1px solid #d1d5db', borderRadius: '4px', backgroundColor: '#fff', cursor: 'pointer' }}
+                className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 px-4 py-2.5 text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                style={{ padding: '0.5rem 1rem', border: 'none', borderRadius: '4px', backgroundColor: '#ef4444', color: '#fff', cursor: 'pointer', fontWeight: '600' }}
+                className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 text-xs font-bold shadow-sm transition-all duration-200 cursor-pointer"
               >
                 Reject Suggestion
               </button>
