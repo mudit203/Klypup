@@ -111,28 +111,115 @@ Copy `.env.example` to `.env` at the root and inside the backend directory. The 
 
 ## Getting Started
 
+### Prerequisites
+Before running the application, make sure you have the following installed on your machine:
+* **Node.js** (v18 or higher)
+* **pnpm** (v9 or higher)
+* **PostgreSQL Database** (e.g., via Neon, Supabase, or a local installation)
+* **Groq API Key** (required for the AI agent pricing analysis pipeline)
+
+---
+
+### Step 1: Clone and Install Dependencies
+Install all workspace dependencies from the root directory:
 ```bash
-# 1. Install dependencies
 pnpm install
-
-# 2. Build the shared package (required before running backend or frontend)
-pnpm build:shared
-
-# 3. Push schema and seed the database
-cd backend
-npx prisma migrate deploy
-npx prisma db seed
-
-# 4. Start the backend (from repo root)
-pnpm dev:backend
-
-# 5. Start the frontend in a separate terminal (from repo root)
-pnpm dev:frontend
 ```
 
-The backend starts on `http://localhost:4000` and the frontend on `http://localhost:3000`.
+---
 
-The seed script pre-loads two demo organizations ("TechMart" and "FashionHub"), each with products, historical competitor prices, demand signals, and inventory snapshots, so the dashboard is immediately populated on first load.
+### Step 2: Configure Environment Variables
+Copy the workspace-level template [.env.example](file:///c:/Projects/Klypup/.env.example) to create a backend `.env` file:
+```bash
+cp .env.example backend/.env
+```
+
+Open [backend/.env](file:///c:/Projects/Klypup/backend/.env) and update the following configuration variables:
+```env
+# Database Connection (Connection Pooler URI on port 6543)
+DATABASE_URL="postgresql://user:password@host:6543/postgres?pgbouncer=true"
+
+# Direct Connection (Direct Session URI on port 5432)
+DIRECT_URL="postgresql://user:password@host:5432/postgres"
+
+# Auth Secrets (Set to secure 32-character strings)
+JWT_SECRET="your_jwt_access_secret_here"
+JWT_REFRESH_SECRET="your_jwt_refresh_secret_here"
+
+# Groq AI Keys
+GROQ_API_KEY="gsk_your_actual_groq_api_key_here"
+```
+
+For the frontend, you can optionally create a root `.env` file containing the backend endpoint:
+```env
+NEXT_PUBLIC_API_URL="http://localhost:4000/api/v1"
+```
+
+---
+
+### Step 3: Build the Shared Library
+Build the shared schemas and Zod validators which both the frontend and backend require:
+```bash
+pnpm build:shared
+```
+
+---
+
+### Step 4: Database Setup (Prisma Client & Seeding)
+Navigate into the `/backend` folder, compile the Prisma client, deploy the database tables, and run the seed script:
+```bash
+cd backend
+
+# Generate the Prisma client
+npx prisma generate
+
+# Deploy migrations to your database
+npx prisma migrate deploy
+
+# Seed the database with demo products, competitor prices, and historical logs
+npx prisma db seed
+
+# Return to the root folder
+cd ..
+```
+
+---
+
+### Step 5: Start the Development Servers
+Open two terminal windows to run the frontend and backend concurrently from the root directory:
+
+**Terminal 1 (Backend API Server)**:
+```bash
+pnpm dev:backend
+```
+*The server will start running at `http://localhost:4000`.*
+
+**Terminal 2 (Frontend Next.js App)**:
+```bash
+pnpm dev:frontend
+```
+*The application interface will be accessible at `http://localhost:3000`.*
+
+---
+
+### Step 6: Log In with Demo Accounts
+The seed script configures two pre-populated organizations so you can test the multi-tenant system immediately.
+
+#### Organization 1: TechMart Inc.
+* **Admin User**:
+  * Email: `admin@techmart.com`
+  * Password: `Demo1234!`
+* **Analyst User**:
+  * Email: `analyst@techmart.com`
+  * Password: `Demo1234!`
+
+#### Organization 2: StyleZone
+* **Admin User**:
+  * Email: `admin@stylezone.com`
+  * Password: `Demo1234!`
+* **Analyst User**:
+  * Email: `analyst@stylezone.com`
+  * Password: `Demo1234!`
 
 ---
 
