@@ -107,7 +107,7 @@ export default function DashboardPage() {
     setError(null);
     setSimulationSuccess(null);
     try {
-      await api.post('/simulation/run?triggerAi=true');
+      await api.post('/simulation/run?triggerAi=false');
       setSimulationSuccess('Market day simulation executed successfully! Stock levels, competitor listings, and demand indexes have updated, and AI calculations are processing in the background.');
       setRefreshTrigger(prev => prev + 1);
     } catch (err: any) {
