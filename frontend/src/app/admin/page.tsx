@@ -369,7 +369,7 @@ export default function AdminSettingsPage() {
                     placeholder="e.g. Footwear"
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
-                    className="w-full p-2 text-xs border border-neutral-200 rounded-lg bg-white outline-none"
+                    className="w-full p-2 text-xs border border-neutral-200 rounded-lg bg-white outline-none text-neutral-900"
                   />
                 </div>
                 <div className="space-y-1">
@@ -456,7 +456,7 @@ export default function AdminSettingsPage() {
                 placeholder="Filter catalog products by name or SKU..."
                 value={productsSearch}
                 onChange={(e) => { setProductsSearch(e.target.value); setProductsPage(1); }}
-                className="w-full p-2 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                className="w-full p-2 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
               />
             </div>
 
@@ -558,7 +558,7 @@ export default function AdminSettingsPage() {
                   value={prodName}
                   onChange={(e) => setProdName(e.target.value)}
                   placeholder="e.g. Sony WH-1000XM5"
-                  className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                  className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                 />
               </div>
 
@@ -571,7 +571,7 @@ export default function AdminSettingsPage() {
                     value={prodSku}
                     onChange={(e) => setProdSku(e.target.value)}
                     placeholder="e.g. SONY-WH1000"
-                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   />
                 </div>
                 <div className="space-y-1">
@@ -580,7 +580,7 @@ export default function AdminSettingsPage() {
                     required
                     value={prodCategory}
                     onChange={(e) => setProdCategory(e.target.value)}
-                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   >
                     <option value="">Select Category</option>
                     <option value="Electronics">Electronics</option>
@@ -602,7 +602,7 @@ export default function AdminSettingsPage() {
                     value={prodCost}
                     onChange={(e) => setProdCost(e.target.value)}
                     placeholder="150.00"
-                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   />
                 </div>
                 <div className="space-y-1">
@@ -615,7 +615,7 @@ export default function AdminSettingsPage() {
                     value={prodPrice}
                     onChange={(e) => setProdPrice(e.target.value)}
                     placeholder="299.99"
-                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   />
                 </div>
                 <div className="space-y-1">
@@ -627,7 +627,7 @@ export default function AdminSettingsPage() {
                     value={prodStock}
                     onChange={(e) => setProdStock(e.target.value)}
                     placeholder="100"
-                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   />
                 </div>
               </div>
@@ -675,7 +675,7 @@ export default function AdminSettingsPage() {
                   required
                   value={prodName}
                   onChange={(e) => setProdName(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                  className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                 />
               </div>
 
@@ -685,7 +685,7 @@ export default function AdminSettingsPage() {
                   required
                   value={prodCategory}
                   onChange={(e) => setProdCategory(e.target.value)}
-                  className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                  className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                 >
                   <option value="Electronics">Electronics</option>
                   <option value="Clothing">Clothing</option>
@@ -704,7 +704,7 @@ export default function AdminSettingsPage() {
                     min="0"
                     value={prodCost}
                     onChange={(e) => setProdCost(e.target.value)}
-                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   />
                 </div>
                 <div className="space-y-1">
@@ -716,7 +716,7 @@ export default function AdminSettingsPage() {
                     min="0"
                     value={prodPrice}
                     onChange={(e) => setProdPrice(e.target.value)}
-                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   />
                 </div>
               </div>

@@ -172,7 +172,7 @@ export default function AuditTrailPage() {
                 placeholder="Search audit trail by product SKU..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                className="w-full p-2.5 pl-9 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                className="w-full p-2.5 pl-9 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
               />
             </div>
 
@@ -182,7 +182,7 @@ export default function AuditTrailPage() {
               <select
                 value={actionFilter}
                 onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-                className="w-full sm:w-48 p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none font-bold text-neutral-700"
+                className="w-full sm:w-48 p-2.5 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none font-bold text-neutral-900"
               >
                 <option value="">All system events</option>
                 <option value="PRICE_AUTO_EXECUTED">AI Auto-executed price</option>

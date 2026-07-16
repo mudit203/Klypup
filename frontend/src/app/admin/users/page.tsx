@@ -289,7 +289,7 @@ export default function UserManagementPage() {
                     value={inviteName}
                     onChange={(e) => setInviteName(e.target.value)}
                     placeholder="e.g. John Doe"
-                    className="w-full p-2.5 pl-9 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 pl-9 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   />
                 </div>
               </div>
@@ -306,7 +306,7 @@ export default function UserManagementPage() {
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
                     placeholder="john@company.com"
-                    className="w-full p-2.5 pl-9 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 pl-9 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   />
                 </div>
               </div>
@@ -323,7 +323,7 @@ export default function UserManagementPage() {
                     value={invitePassword}
                     onChange={(e) => setInvitePassword(e.target.value)}
                     placeholder="Min 8 characters"
-                    className="w-full p-2.5 pl-9 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none"
+                    className="w-full p-2.5 pl-9 text-xs border border-neutral-200 rounded-lg bg-neutral-50 focus:bg-white outline-none text-neutral-900"
                   />
                 </div>
               </div>
