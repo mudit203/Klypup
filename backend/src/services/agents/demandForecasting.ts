@@ -15,12 +15,18 @@ export async function runDemandForecastingAgent(
   const systemPrompt = `You are a Demand Forecasting AI Agent.
 Analyze the demand signal indexes and seasonality logs over the last 30 days for a product.
 Consider the product's category: "${category}".
+
+Rules for output fields:
+- demand_direction: Must be one of "UP", "DOWN", or "STABLE".
+- seasonality_factor: Must be one of "PEAK", "DIP", or "NEUTRAL".
+- pricing_implication: Must be one of "INCREASE", "DECREASE", or "HOLD".
+
 You MUST respond with a JSON object matching this schema exactly:
 {
   "summary": "A 2-3 sentence plain-English summary of recent traffic/interest movements.",
-  "demand_direction": "UP" | "DOWN" | "STABLE",
-  "seasonality_factor": "PEAK" | "DIP" | "NEUTRAL",
-  "pricing_implication": "INCREASE" | "DECREASE" | "HOLD"
+  "demand_direction": "STABLE",
+  "seasonality_factor": "NEUTRAL",
+  "pricing_implication": "HOLD"
 }
 Return ONLY valid JSON. Do not include markdown blocks, code wrappers, or conversational text.`;
 

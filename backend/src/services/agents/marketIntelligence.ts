@@ -14,13 +14,20 @@ export async function runMarketIntelligenceAgent(
 ): Promise<MarketIntelligenceOutput> {
   const systemPrompt = `You are a Market Intelligence AI Agent.
 Analyze the competitor price history over the last 30 days and identify trends, notable price drops, or price increases.
+
+Rules for output fields:
+- notable_event: Set to true if there is a significant price drop or increase of >= 5% in the logs. Otherwise false.
+- competitor_trend: Must be one of "DOWN", "UP", "STABLE", or "MIXED".
+- biggest_competitor: Name of the competitor with the largest price change, or "None".
+- biggest_price_delta_pct: The percentage price change as a number, e.g. -22.0 or 15.5.
+
 You MUST respond with a JSON object matching this schema exactly:
 {
   "summary": "A 2-3 sentence plain-English summary of recent competitor price movements.",
-  "notable_event": true or false (true if there are significant drops or increases of >= 5%),
-  "competitor_trend": "DOWN" | "UP" | "STABLE" | "MIXED",
-  "biggest_competitor": "Name of competitor with the largest price change, or 'None'",
-  "biggest_price_delta_pct": number (the percentage price change, e.g. -22.0 or 15.5)
+  "notable_event": false,
+  "competitor_trend": "STABLE",
+  "biggest_competitor": "None",
+  "biggest_price_delta_pct": 0.0
 }
 Return ONLY valid JSON. Do not include markdown blocks, code wrappers, or conversational text.`;
 

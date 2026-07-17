@@ -33,10 +33,10 @@ Rules:
 You MUST respond with a JSON object matching this schema exactly:
 {
   "summary": "A 2-3 sentence overview of the pricing strategy.",
-  "recommended_price": number (the suggested new retail price, e.g. 149.99),
-  "confidence_score": number (0 to 100 based on signal strength and alignment),
+  "recommended_price": 149.99,
+  "confidence_score": 85,
   "rationale": "A 2-4 sentence plain-English explanation of your recommendation.",
-  "reasoning_factors": ["string array listing main reasons for the price choice"]
+  "reasoning_factors": ["Competitor prices decreased", "Healthy stock margins allowed price match"]
 }
 Return ONLY valid JSON. Do not include markdown blocks, code wrappers, or conversational text.`;
 
