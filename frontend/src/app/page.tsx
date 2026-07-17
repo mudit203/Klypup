@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 import { Search, LogOut, Play, CheckCircle2, AlertCircle, ShoppingBag, ArrowUpDown, ChevronRight, ClipboardList, Settings } from 'lucide-react';
 
 interface Product {
@@ -50,7 +51,6 @@ export default function DashboardPage() {
 
   // Market Simulation States
   const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationSuccess, setSimulationSuccess] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Fetch products catalog
@@ -105,13 +105,14 @@ export default function DashboardPage() {
   const handleSimulateMarketDay = async () => {
     setIsSimulating(true);
     setError(null);
-    setSimulationSuccess(null);
     try {
       await api.post('/simulation/run?triggerAi=false');
-      setSimulationSuccess('Market day simulation executed successfully! Stock levels, competitor listings, and demand indexes have updated, and AI calculations are processing in the background.');
+      toast.success('Market day simulation executed successfully! Stock levels, competitor listings, and demand indexes have updated.');
       setRefreshTrigger(prev => prev + 1);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to simulate market day.');
+      const errorMsg = err.response?.data?.error || 'Failed to simulate market day.';
+      toast.error(errorMsg);
+      setError(errorMsg);
     } finally {
       setIsSimulating(false);
     }
@@ -235,12 +236,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {simulationSuccess && (
-          <div className="flex items-start space-x-2.5 rounded-xl bg-emerald-50/50 border border-emerald-200 p-4 text-xs text-emerald-800 mb-6 animate-in fade-in duration-200">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-            <div className="font-semibold">{simulationSuccess}</div>
-          </div>
-        )}
 
         {/* Product Catalog Table */}
         {isLoading ? (

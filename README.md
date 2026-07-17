@@ -23,6 +23,33 @@ The project is designed to be a self-contained, locally runnable demo with reali
 
 ---
 
+## Application Preview
+
+<p align="center">
+  <strong>Login Page</strong>
+  <br />
+  <img src="./assets/Screenshot%202026-07-17%20182043.png" alt="Dynamic Pricing Dashboard" width="800" />
+</p>
+
+<p align="center">
+  <strong>Product listings dashboard</strong>
+  <br />
+  <img src="./assets/Screenshot%202026-07-17%20182111.png" alt="Pending Approval Queue" width="800" />
+</p>
+
+<p align="center">
+  <strong>Product dashboard</strong>
+  <br />
+  <img src="./assets/Screenshot%202026-07-17%20182127.png" alt="Admin Control Panel" width="800" />
+</p>
+
+<p align="center">
+  <strong>Pending approval queue</strong>
+  <br />
+  <img src="./assets/image.png" alt="Admin Control Panel" width="800" />
+</p>
+---
+
 ## Repository Structure
 
 * [backend/](file:///c:/Projects/Klypup/backend) — Express API server

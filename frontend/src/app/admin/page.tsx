@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 import { 
   ArrowLeft, 
   Settings, 
@@ -48,8 +49,6 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<OrgSettings | null>(null);
   const [confidenceInput, setConfidenceInput] = useState<number>(80);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
-  const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
-  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   // Margin floor form state
   const [newCategory, setNewCategory] = useState('');
@@ -89,7 +88,7 @@ export default function AdminSettingsPage() {
       setSettings(res.data);
       setConfidenceInput(Math.round(res.data.confidence_threshold * 100));
     } catch (err: any) {
-      setSettingsError(err.response?.data?.error || 'Failed to fetch settings');
+      toast.error(err.response?.data?.error || 'Failed to fetch settings');
     }
   };
 
@@ -106,7 +105,7 @@ export default function AdminSettingsPage() {
       setProducts(res.data.products);
       setProductsTotalPages(res.data.pagination?.totalPages || 1);
     } catch (err: any) {
-      setSettingsError(err.response?.data?.error || 'Failed to fetch products');
+      toast.error(err.response?.data?.error || 'Failed to fetch products');
     } finally {
       setProductsLoading(false);
     }
@@ -115,16 +114,14 @@ export default function AdminSettingsPage() {
   // Confidence settings action
   const handleSaveSettings = async () => {
     setIsUpdatingSettings(true);
-    setSettingsSuccess(null);
-    setSettingsError(null);
     try {
       await api.patch('/admin/settings', {
         confidence_threshold: confidenceInput / 100,
       });
-      setSettingsSuccess('Confidence threshold updated successfully.');
+      toast.success('Confidence threshold updated successfully.');
       await fetchSettings();
     } catch (err: any) {
-      setSettingsError(err.response?.data?.error || 'Failed to update settings');
+      toast.error(err.response?.data?.error || 'Failed to update settings');
     } finally {
       setIsUpdatingSettings(false);
     }
@@ -135,8 +132,6 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     if (!newCategory.trim()) return;
     setIsAddingFloor(true);
-    setSettingsError(null);
-    setSettingsSuccess(null);
     try {
       await api.post('/admin/settings/margin-floors', {
         category: newCategory.trim(),
@@ -144,10 +139,10 @@ export default function AdminSettingsPage() {
       });
       setNewCategory('');
       setNewMinMargin(20);
-      setSettingsSuccess(`Margin floor for "${newCategory}" added successfully.`);
+      toast.success(`Margin floor for "${newCategory}" added successfully.`);
       await fetchSettings();
     } catch (err: any) {
-      setSettingsError(err.response?.data?.error || 'Failed to add margin floor');
+      toast.error(err.response?.data?.error || 'Failed to add margin floor');
     } finally {
       setIsAddingFloor(false);
     }
@@ -155,14 +150,12 @@ export default function AdminSettingsPage() {
 
   const handleDeleteMarginFloor = async (floorId: string, categoryName: string) => {
     if (!confirm(`Are you sure you want to delete the margin floor rule for "${categoryName}"?`)) return;
-    setSettingsError(null);
-    setSettingsSuccess(null);
     try {
       await api.delete(`/admin/settings/margin-floors/${floorId}`);
-      setSettingsSuccess(`Margin floor for "${categoryName}" removed.`);
+      toast.success(`Margin floor for "${categoryName}" removed.`);
       await fetchSettings();
     } catch (err: any) {
-      setSettingsError(err.response?.data?.error || 'Failed to delete margin floor');
+      toast.error(err.response?.data?.error || 'Failed to delete margin floor');
     }
   };
 
@@ -192,6 +185,7 @@ export default function AdminSettingsPage() {
         initial_stock: parseInt(prodStock),
       });
       setIsAddModalOpen(false);
+      toast.success(`Product "${prodName}" created successfully.`);
       fetchProducts();
     } catch (err: any) {
       setProdError(err.response?.data?.error || err.response?.data?.details?.[0] || 'Failed to create product');
@@ -223,6 +217,7 @@ export default function AdminSettingsPage() {
         current_price: parseFloat(prodPrice),
       });
       setIsEditModalOpen(false);
+      toast.success(`Product "${prodName}" updated successfully.`);
       fetchProducts();
     } catch (err: any) {
       setProdError(err.response?.data?.error || err.response?.data?.details?.[0] || 'Failed to update product');
@@ -235,9 +230,10 @@ export default function AdminSettingsPage() {
     if (!confirm(`Are you sure you want to archive product "${prod.name}" (SKU: ${prod.sku})? This soft-deletes it from active catalog grids.`)) return;
     try {
       await api.delete(`/products/${prod.id}`);
+      toast.success(`Product "${prod.name}" archived successfully.`);
       fetchProducts();
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to archive product');
+      toast.error(err.response?.data?.error || 'Failed to archive product');
     }
   };
 
@@ -286,18 +282,7 @@ export default function AdminSettingsPage() {
 
       <div className="max-w-7xl mx-auto">
         
-        {/* Toast Message Banners */}
-        {settingsError && (
-          <div className="flex items-center space-x-2 p-4 mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
-            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-            <span>{settingsError}</span>
-          </div>
-        )}
-        {settingsSuccess && (
-          <div className="p-4 mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-medium">
-            {settingsSuccess}
-          </div>
-        )}
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-8">
           

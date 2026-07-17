@@ -4,6 +4,7 @@ import React, { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
+import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ArrowLeft, ClipboardList, Play, CheckCircle2, AlertCircle, ShieldAlert, ChevronDown, Activity, Sparkles, TrendingUp, X } from 'lucide-react';
 
@@ -65,7 +66,6 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [overridePrice, setOverridePrice] = useState('');
   const [isRejectingRec, setIsRejectingRec] = useState(false);
   const [rejectionReasonText, setRejectionReasonText] = useState('');
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Main data load function (fetches details, charts, and latest AI recommendation)
   const fetchProductData = async () => {
@@ -134,7 +134,6 @@ export default function ProductDetailPage({ params }: PageProps) {
     setProgressLogs([]);
     setAnalysisError(null);
     setAnalysisResult(null);
-    setNotification(null);
 
     // 1. Start parallel database polling for agent checkmarks
     const intervalId = setInterval(async () => {
@@ -164,11 +163,12 @@ export default function ProductDetailPage({ params }: PageProps) {
 
       // Re-fetch graphs and price figures
       await fetchProductData();
+      toast.success('AI pricing intelligence analysis completed successfully!');
     } catch (err: any) {
       clearInterval(intervalId);
-      setAnalysisError(
-        err.response?.data?.message || err.response?.data?.error || 'Pricing analysis run encountered an error.'
-      );
+      const errMsg = err.response?.data?.message || err.response?.data?.error || 'Pricing analysis run encountered an error.';
+      setAnalysisError(errMsg);
+      toast.error(errMsg);
     } finally {
       clearInterval(intervalId);
     }
@@ -177,13 +177,12 @@ export default function ProductDetailPage({ params }: PageProps) {
   // Human Action 1: Approve Recommendation
   const handleApproveDetail = async () => {
     if (!activeRec) return;
-    setNotification(null);
     try {
       await api.post(`/recommendations/${activeRec.id}/approve`);
-      setNotification({ type: 'success', message: 'Price recommendation approved and storefront updated.' });
+      toast.success('Price recommendation approved and storefront updated.');
       await fetchProductData();
     } catch (err: any) {
-      setNotification({ type: 'error', message: err.response?.data?.error || 'Failed to approve recommendation.' });
+      toast.error(err.response?.data?.error || 'Failed to approve recommendation.');
     }
   };
 
@@ -194,11 +193,10 @@ export default function ProductDetailPage({ params }: PageProps) {
     
     const priceNum = parseFloat(overridePrice);
     if (isNaN(priceNum) || priceNum <= 0) {
-      setNotification({ type: 'error', message: 'Please enter a valid price.' });
+      toast.error('Please enter a valid price.');
       return;
     }
 
-    setNotification(null);
     setIsModifyingPrice(false);
     setOverridePrice('');
 
@@ -206,10 +204,10 @@ export default function ProductDetailPage({ params }: PageProps) {
       await api.post(`/recommendations/${activeRec.id}/modify`, {
         new_price: priceNum
       });
-      setNotification({ type: 'success', message: `Price modified and applied at $${priceNum.toFixed(2)}.` });
+      toast.success(`Price modified and applied at $${priceNum.toFixed(2)}.`);
       await fetchProductData();
     } catch (err: any) {
-      setNotification({ type: 'error', message: err.response?.data?.error || 'Failed to override price.' });
+      toast.error(err.response?.data?.error || 'Failed to override price.');
     }
   };
 
@@ -219,11 +217,10 @@ export default function ProductDetailPage({ params }: PageProps) {
     if (!activeRec) return;
 
     if (rejectionReasonText.trim().length < 5) {
-      setNotification({ type: 'error', message: 'Please provide a reason with at least 5 characters.' });
+      toast.error('Please provide a reason with at least 5 characters.');
       return;
     }
 
-    setNotification(null);
     setIsRejectingRec(false);
     setRejectionReasonText('');
 
@@ -231,10 +228,10 @@ export default function ProductDetailPage({ params }: PageProps) {
       await api.post(`/recommendations/${activeRec.id}/reject`, {
         reason: rejectionReasonText
       });
-      setNotification({ type: 'success', message: 'Price recommendation rejected.' });
+      toast.success('Price recommendation rejected.');
       await fetchProductData();
     } catch (err: any) {
-      setNotification({ type: 'error', message: err.response?.data?.error || 'Failed to reject recommendation.' });
+      toast.error(err.response?.data?.error || 'Failed to reject recommendation.');
     }
   };
 
@@ -315,19 +312,7 @@ export default function ProductDetailPage({ params }: PageProps) {
         </button>
       </div>
 
-      {/* Notifications */}
-      {notification && (
-        <div className={`flex items-start space-x-2.5 rounded-xl border p-4 text-xs mb-8 animate-in fade-in duration-200 ${
-          notification.type === 'success' ? 'bg-emerald-50/50 border-emerald-200 text-emerald-800' : 'bg-red-50/50 border-red-200 text-red-800'
-        }`}>
-          {notification.type === 'success' ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-          ) : (
-            <ShieldAlert className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-          )}
-          <div className="font-semibold">{notification.message}</div>
-        </div>
-      )}
+
 
       {/* Grid Layout Split */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

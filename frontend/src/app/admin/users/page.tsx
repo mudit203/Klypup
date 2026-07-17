@@ -15,8 +15,11 @@ import {
   Shield, 
   Mail,
   Lock,
-  UserPlus
+  UserPlus,
+  AlertTriangle,
+  Layers
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface UserItem {
   id: string;
@@ -32,8 +35,6 @@ export default function UserManagementPage() {
 
   const [users, setUsers] = useState<UserItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   // Invite user modal/form state
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -50,12 +51,11 @@ export default function UserManagementPage() {
 
   const fetchUsers = async () => {
     setIsLoading(true);
-    setError(null);
     try {
       const res = await api.get('/admin/users');
       setUsers(res.data);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to fetch team members.');
+      toast.error(err.response?.data?.error || 'Failed to fetch team members.');
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +65,6 @@ export default function UserManagementPage() {
     e.preventDefault();
     setInviteError(null);
     setIsSubmittingInvite(true);
-    setSuccess(null);
     try {
       await api.post('/admin/users/invite', {
         name: inviteName,
@@ -73,7 +72,7 @@ export default function UserManagementPage() {
         password: invitePassword,
         role: inviteRole,
       });
-      setSuccess(`Successfully invited and registered "${inviteName}".`);
+      toast.success(`Successfully invited and registered "${inviteName}".`);
       setIsInviteOpen(false);
       // Reset form
       setInviteName('');
@@ -93,28 +92,24 @@ export default function UserManagementPage() {
       fetchUsers(); // reset select state on cancel
       return;
     }
-    setError(null);
-    setSuccess(null);
     try {
       await api.patch(`/admin/users/${targetUserId}/role`, { role: newRole });
-      setSuccess(`Updated "${targetName}" permission level to ${newRole}.`);
+      toast.success(`Updated "${targetName}" permission level to ${newRole}.`);
       fetchUsers();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to update user role.');
+      toast.error(err.response?.data?.error || 'Failed to update user role.');
       fetchUsers();
     }
   };
 
   const handleRemoveUser = async (targetUserId: string, targetName: string) => {
     if (!confirm(`Are you sure you want to remove "${targetName}" from the organization? This action is permanent.`)) return;
-    setError(null);
-    setSuccess(null);
     try {
       await api.delete(`/admin/users/${targetUserId}`);
-      setSuccess(`Successfully removed "${targetName}" from the organization.`);
+      toast.success(`Successfully removed "${targetName}" from the organization.`);
       fetchUsers();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to delete user.');
+      toast.error(err.response?.data?.error || 'Failed to delete user.');
     }
   };
 
@@ -163,17 +158,7 @@ export default function UserManagementPage() {
 
       <div className="max-w-7xl mx-auto">
         
-        {/* Success/Error Toasts */}
-        {error && (
-          <div className="p-4 mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="p-4 mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-medium">
-            {success}
-          </div>
-        )}
+
 
         {/* Team Members Grid Container */}
         <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">

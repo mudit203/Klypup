@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { ArrowLeft, CheckCircle2, AlertCircle, ClipboardList, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -41,7 +42,6 @@ export default function ApprovalQueuePage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Modal states
   const [activeModifyRec, setActiveModifyRec] = useState<Recommendation | null>(null);
@@ -75,17 +75,17 @@ export default function ApprovalQueuePage() {
   const handleApprove = async (rec: Recommendation) => {
     const originalList = [...recommendations];
     setError(null);
-    setSuccessMessage(null);
 
     // Optimistic UI update: remove row immediately
     setRecommendations(prev => prev.filter(r => r.id !== rec.id));
 
     try {
       await api.post(`/recommendations/${rec.id}/approve`);
-      setSuccessMessage(`Approved recommendation for ${rec.product.name} at $${rec.recommended_price.toFixed(2)}.`);
+      toast.success(`Approved recommendation for ${rec.product.name} at $${rec.recommended_price.toFixed(2)}.`);
     } catch (err: any) {
       // Revert on error
       setRecommendations(originalList);
+      toast.error(err.response?.data?.error || 'Failed to approve recommendation.');
       setError(err.response?.data?.error || 'Failed to approve recommendation.');
     }
   };
@@ -97,6 +97,7 @@ export default function ApprovalQueuePage() {
 
     const priceNum = parseFloat(customPrice);
     if (isNaN(priceNum) || priceNum <= 0) {
+      toast.error('Please enter a valid positive number for the overridden price');
       setError('Please enter a valid positive number for the overridden price');
       return;
     }
@@ -104,7 +105,6 @@ export default function ApprovalQueuePage() {
     const rec = activeModifyRec;
     const originalList = [...recommendations];
     setError(null);
-    setSuccessMessage(null);
     
     // Close modal & optimistic remove
     setActiveModifyRec(null);
@@ -115,9 +115,10 @@ export default function ApprovalQueuePage() {
       await api.post(`/recommendations/${rec.id}/modify`, {
         new_price: priceNum
       });
-      setSuccessMessage(`Price for ${rec.product.name} modified and set to $${priceNum.toFixed(2)}.`);
+      toast.success(`Price for ${rec.product.name} modified and set to $${priceNum.toFixed(2)}.`);
     } catch (err: any) {
       setRecommendations(originalList);
+      toast.error(err.response?.data?.error || 'Failed to modify price recommendation.');
       setError(err.response?.data?.error || 'Failed to modify price recommendation.');
     }
   };
@@ -128,6 +129,7 @@ export default function ApprovalQueuePage() {
     if (!activeRejectRec) return;
 
     if (rejectReason.trim().length < 5) {
+      toast.error('Please provide a rejection reason (minimum 5 characters)');
       setError('Please provide a rejection reason (minimum 5 characters)');
       return;
     }
@@ -135,7 +137,6 @@ export default function ApprovalQueuePage() {
     const rec = activeRejectRec;
     const originalList = [...recommendations];
     setError(null);
-    setSuccessMessage(null);
 
     // Close modal & optimistic remove
     setActiveRejectRec(null);
@@ -146,9 +147,10 @@ export default function ApprovalQueuePage() {
       await api.post(`/recommendations/${rec.id}/reject`, {
         reason: rejectReason
       });
-      setSuccessMessage(`Rejected pricing recommendation for ${rec.product.name}.`);
+      toast.success(`Rejected pricing recommendation for ${rec.product.name}.`);
     } catch (err: any) {
       setRecommendations(originalList);
+      toast.error(err.response?.data?.error || 'Failed to reject recommendation.');
       setError(err.response?.data?.error || 'Failed to reject recommendation.');
     }
   };
@@ -212,12 +214,7 @@ export default function ApprovalQueuePage() {
           </div>
         )}
 
-        {successMessage && (
-          <div className="flex items-start space-x-2.5 rounded-xl bg-emerald-50/50 border border-emerald-200 p-4 text-xs text-emerald-800 mb-6 animate-in fade-in duration-200">
-            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-            <div className="font-semibold">{successMessage}</div>
-          </div>
-        )}
+
 
         {/* Recommendations Table / Grid */}
         {isLoading ? (
